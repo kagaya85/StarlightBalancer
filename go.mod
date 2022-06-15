@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/go-kratos/kratos/v2 v2.3.1
+	github.com/golang/protobuf v1.5.2
 	github.com/google/wire v0.5.0
 	google.golang.org/genproto v0.0.0-20220614165028-45ed7f3ff16e
 	google.golang.org/grpc v1.47.0
@@ -15,7 +16,6 @@ require (
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/form/v4 v4.2.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/subcommands v1.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect

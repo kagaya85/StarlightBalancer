@@ -17,6 +17,11 @@ message UpdateRequeset {
 }
 
 message UpdateReply {
-  // operation -> weight
-  map<string, int32> weights = 1;
+  // operation -> instance
+  map<string, Weight> weightList = 1;
+}
+
+message Weight {
+  // instance -> weight
+  map<string, int32> instanceWeight = 1;
 }
