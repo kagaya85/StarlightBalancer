@@ -3,7 +3,7 @@ package data
 import (
 	"context"
 
-	"service-a/internal/biz"
+	"starlight/services/a/internal/biz"
 	"github.com/go-kratos/kratos/v2/log"
 )
 

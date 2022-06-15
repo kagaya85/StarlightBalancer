@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	v1 "balancer/api/balancer/v1"
-	"balancer/internal/biz"
+	v1 "starlight/api/balancer/v1"
+	"starlight/balancer/internal/biz"
 )
 
 // GreeterService is a greeter service.

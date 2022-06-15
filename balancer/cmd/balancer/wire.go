@@ -1,3 +1,4 @@
+//go:build wireinject
 // +build wireinject
 
 // The build tag makes sure the stub is not built in the final build.
@@ -5,14 +6,14 @@
 package main
 
 import (
-	"balancer/internal/biz"
-	"balancer/internal/conf"
-	"balancer/internal/data"
-	"balancer/internal/server"
-	"balancer/internal/service"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
+	"starlight/balancer/internal/biz"
+	"starlight/balancer/internal/conf"
+	"starlight/balancer/internal/data"
+	"starlight/balancer/internal/server"
+	"starlight/balancer/internal/service"
 )
 
 // wireApp init kratos application.

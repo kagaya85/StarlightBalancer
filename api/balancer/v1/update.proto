@@ -2,8 +2,10 @@ syntax = "proto3";
 
 package balancer.v1;
 
-service Updater {
-  rpc Update (UpdateRequeset) returns (UpdateReply);
+option go_package = "api/balancer/v1;v1";
+
+service WeightUpdater {
+  rpc Update (UpdateRequeset) returns (stream UpdateReply);
 }
 
 message UpdateRequeset {

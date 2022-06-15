@@ -3,7 +3,8 @@ package data
 import (
 	"context"
 
-	"balancer/internal/biz"
+	"starlight/balancer/internal/biz"
+
 	"github.com/go-kratos/kratos/v2/log"
 )
 

@@ -4,7 +4,7 @@ package balancer.v1;
 
 import "google/api/annotations.proto";
 
-option go_package = "balancer/api/balancer/v1;v1";
+option go_package = "api/balancer/v1;v1";
 option java_multiple_files = true;
 option java_package = "dev.kratos.api.balancer.v1";
 option java_outer_classname = "BalancerProtoV1";
@@ -25,4 +25,5 @@ message HelloRequest {
 
 // The response message containing the greetings
 message HelloReply {
+  string message = 1;
 }

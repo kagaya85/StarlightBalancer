@@ -5,11 +5,11 @@
 package main
 
 import (
-	"service-a/internal/biz"
-	"service-a/internal/conf"
-	"service-a/internal/data"
-	"service-a/internal/server"
-	"service-a/internal/service"
+	"starlight/services/a/internal/biz"
+	"starlight/services/a/internal/conf"
+	"starlight/services/a/internal/data"
+	"starlight/services/a/internal/server"
+	"starlight/services/a/internal/service"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
