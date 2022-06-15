@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package balancer.v1;
+
+service Updater {
+  rpc Update (UpdateRequeset) returns (UpdateReply);
+}
+
+message UpdateRequeset {
+  string serviceName = 1;
+  string instanceID = 2;
+
+  // 依赖接口列表
+  repeated string operation = 3;
+}
+
+message UpdateReply {
+  // operation -> weight
+  map<string, int32> weights = 1;
+}
