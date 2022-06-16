@@ -31,9 +31,20 @@ message Data {
     string driver = 1;
     string source = 2;
   }
+  message Skywalking {
+    string url = 1;
+    string username = 2;
+    string password = 3;
+  }
+  message Prometheus {
+    string url = 1;
+  }
   Database database = 1;
+  Skywalking skywalking = 2;
+  Prometheus prometheus = 3;
 }
 
 message Updater {
-  google.protobuf.Duration updateInterval = 1;
+  string timezone = 1;
+  google.protobuf.Duration updateInterval = 2;
 }

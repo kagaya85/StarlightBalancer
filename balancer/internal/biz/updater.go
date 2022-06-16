@@ -1,12 +1,22 @@
 package biz
 
 import (
+	"context"
 	"sync"
+	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
 
 type InstanceID string
+
+type TraceSource interface {
+	ListSpanFrom(context.Context, time.Time) []Span
+}
+
+type MetricSource interface {
+	GetByInstanceID(context.Context, InstanceID) Metric
+}
 
 type weightList struct {
 	sync.Mutex
@@ -20,6 +30,18 @@ type dependencyGraph struct {
 
 	// operation dependency graph
 	graph map[string][]string
+}
+
+type Span struct {
+	spanID       string
+	parentSpanID string
+	traceID      string
+
+	start    time.Time
+	duration time.Duration
+
+	service   string
+	operation string
 }
 
 type Metric struct {
@@ -40,11 +62,21 @@ type WeightUpdater struct {
 	// instance metrics
 	histroyMetrics map[InstanceID]Metric
 
+	// trace data source
+	traceSource TraceSource
+
+	// metric data source
+	metricSource MetricSource
+
 	log log.Helper
 }
 
-func NewWeightUpdater(logger log.Logger) *WeightUpdater {
-	return &WeightUpdater{log: *log.NewHelper(logger)}
+func NewWeightUpdater(logger log.Logger, traceSource TraceSource, metricSource MetricSource) *WeightUpdater {
+	return &WeightUpdater{
+		log:          *log.NewHelper(logger),
+		traceSource:  traceSource,
+		metricSource: metricSource,
+	}
 }
 
 func (u *WeightUpdater) UpdateInstance(instanceID string) map[InstanceID]map[string]int {
