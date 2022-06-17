@@ -11,13 +11,13 @@ import (
 
 type traceSource struct {
 	traceData *TraceData
-	logger    *log.Helper
+	log       *log.Helper
 }
 
 func NewTraceSource(traceData *TraceData, logger log.Logger) biz.TraceSource {
 	return &traceSource{
 		traceData: traceData,
-		logger:    log.NewHelper(logger),
+		log:       log.NewHelper(logger),
 	}
 }
 
@@ -25,7 +25,7 @@ func (s *traceSource) ListSpan(ctx context.Context, duration time.Duration) []bi
 	end := time.Now()
 	start := end.Add(duration)
 	traces := s.traceData.QueryTraces(ctx, start, end)
-	s.logger.Infof("queried %d traces from %s to %s", len(traces), start.Format(time.Layout), end.Format(time.Layout))
+	s.log.Infof("queried %d traces from %s to %s", len(traces), start.Format(time.Layout), end.Format(time.Layout))
 
 	spans := make([]biz.Span, 10)
 	for _, trace := range traces {

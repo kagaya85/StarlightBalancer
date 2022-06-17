@@ -46,11 +46,14 @@ type Span struct {
 }
 
 type Metric struct {
-	CPU          float64
-	Mem          float64
-	Load         int
-	Connecnt     int
-	ResponseTime int // ms
+	CPU float64 // pod cpu usage rate
+	Mem float64 // pod memory usage rate
+
+	Load            int // node exporter
+	ConnectionCount int // node_netstat_Tcp_ActiveOpens
+
+	ResponseTime int     // app range response time
+	SuccessRate  float64 // app range success rate
 }
 
 type WeightUpdater struct {
