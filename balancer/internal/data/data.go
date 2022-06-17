@@ -125,8 +125,9 @@ func (t *TraceData) QueryTraceIDs(ctx context.Context, startTime time.Time, endT
 	return traceIDs
 }
 
-func (t *TraceData) QueryTraces(ctx context.Context, traceIDs []string) []api.Trace {
-	traces := make([]api.Trace, 10)
+func (t *TraceData) QueryTraces(ctx context.Context, start time.Time, end time.Time) []api.Trace {
+	traceIDs := t.QueryTraceIDs(ctx, start, end, api.TraceStateAll)
+	traces := make([]api.Trace, len(traceIDs))
 	req := graphql.NewRequest(assets.Read("graphql/Trace.graphql"))
 
 	for _, traceID := range traceIDs {

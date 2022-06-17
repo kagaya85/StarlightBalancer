@@ -11,7 +11,7 @@ import (
 type InstanceID string
 
 type TraceSource interface {
-	ListSpanFrom(context.Context, time.Time) []Span
+	ListSpan(context.Context, time.Duration) []Span
 }
 
 type MetricSource interface {
@@ -33,23 +33,24 @@ type dependencyGraph struct {
 }
 
 type Span struct {
-	spanID       string
-	parentSpanID string
-	traceID      string
+	SpanID       string
+	ParentSpanID string
+	TraceID      string
 
-	start    time.Time
-	duration time.Duration
+	Start    time.Time
+	Duration time.Duration
 
-	service   string
-	operation string
+	Service   string
+	Instance  string
+	Operation string
 }
 
 type Metric struct {
-	cpu          float64
-	mem          float64
-	load         int
-	connecnt     int
-	responseTime int // ms
+	CPU          float64
+	Mem          float64
+	Load         int
+	Connecnt     int
+	ResponseTime int // ms
 }
 
 type WeightUpdater struct {
