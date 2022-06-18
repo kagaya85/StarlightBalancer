@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	v1 "starlight/api/balancer/v1"
 	"starlight/balancer/internal/biz"
 	"starlight/balancer/internal/conf"
@@ -31,14 +32,14 @@ func NewWeightUpdaterService(c *conf.Updater, updater *biz.WeightUpdater, logger
 func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpdater_UpdateServer) error {
 	ticker := time.NewTicker(s.updateInterval)
 	for {
-		weightsList := s.updater.UpdateInstance(in.InstanceID)
+		weightsList := s.updater.UpdateInstance(context.Background(), in.InstanceID)
 		wl := map[string]*v1.Weight{}
 		for op, insWeights := range weightsList {
 			iw := map[string]int32{}
 			for ins, weight := range insWeights {
-				iw[ins] = int32(weight)
+				iw[string(ins)] = int32(weight)
 			}
-			wl[string(op)] = &v1.Weight{InstanceWeight: iw}
+			wl[op] = &v1.Weight{InstanceWeight: iw}
 		}
 		if err := stream.Send(&v1.UpdateReply{WeightList: wl}); err != nil {
 			log.Infof("update stream error: %v", err)

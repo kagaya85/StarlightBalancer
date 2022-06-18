@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"starlight/balancer/internal/biz"
-	"strconv"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -29,20 +28,29 @@ func (s *traceSource) ListSpan(ctx context.Context, duration time.Duration) []bi
 
 	spans := make([]biz.Span, 10)
 	for _, trace := range traces {
+		insMap := map[int]string{-1: "root"}
+		svcMap := map[int]string{-1: "root-service"}
+		opMap := map[int]string{-1: "root-operation"}
+		// TODO 获取接口依赖 只保留Entry span
+		for _, span := range trace.Spans {
+			insMap[span.SpanID] = span.ServiceInstanceName
+			svcMap[span.SpanID] = span.ServiceCode
+			opMap[span.SpanID] = *span.EndpointName
+		}
 		for _, span := range trace.Spans {
 			st := time.UnixMilli(span.StartTime)
 			et := time.UnixMilli(span.EndTime)
 			spans = append(spans, biz.Span{
-				SpanID:       strconv.Itoa(span.SpanID),
-				ParentSpanID: strconv.Itoa(span.ParentSpanID),
-				TraceID:      span.TraceID,
-
+				TraceID:  span.TraceID,
 				Start:    st,
 				Duration: et.Sub(st),
 
-				Service:   span.ServiceCode,
-				Instance:  span.ServiceInstanceName,
-				Operation: *span.EndpointName,
+				CallerIns: insMap[span.ParentSpanID],
+				CalleeIns: insMap[span.SpanID],
+				CallerSvc: svcMap[span.ParentSpanID],
+				CalleeSvc: svcMap[span.SpanID],
+				CallerOp:  *span.EndpointName,
+				CalleeOp:  *span.EndpointName,
 			})
 		}
 	}

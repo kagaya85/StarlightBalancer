@@ -8,14 +8,17 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 )
 
-type InstanceID string
-
+type (
+	Instance  string
+	Operation string
+	Service   string
+)
 type TraceSource interface {
 	ListSpan(context.Context, time.Duration) []Span
 }
 
 type MetricSource interface {
-	GetByInstanceID(context.Context, InstanceID) Metric
+	GetByInstanceID(context.Context, Instance) Metric
 }
 
 type weightList struct {
@@ -29,20 +32,34 @@ type dependencyGraph struct {
 	sync.Mutex
 
 	// operation dependency graph
-	graph map[string][]string
+	graph map[Operation][]Operation
+
+	serviceMap map[Operation]Service
+}
+
+func (g *dependencyGraph) Update(callerOp Operation, calleeOp Operation, callerSvc Service, calleeSvc Service) {
+	g.graph[callerOp] = append(g.graph[callerOp], calleeOp)
+	if _, has := g.serviceMap[callerOp]; !has {
+		g.serviceMap[callerOp] = callerSvc
+	}
+	if _, has := g.serviceMap[calleeOp]; !has {
+		g.serviceMap[calleeOp] = calleeSvc
+	}
 }
 
 type Span struct {
-	SpanID       string
-	ParentSpanID string
-	TraceID      string
-
+	TraceID  string
 	Start    time.Time
 	Duration time.Duration
 
-	Service   string
-	Instance  string
-	Operation string
+	CallerIns string
+	CalleeIns string
+
+	CallerSvc string
+	CalleeSvc string
+
+	CallerOp string
+	CalleeOp string
 }
 
 type Metric struct {
@@ -58,13 +75,13 @@ type Metric struct {
 
 type WeightUpdater struct {
 	// instance id -> weight list
-	instances map[InstanceID]weightList
+	instances map[Instance]weightList
 
-	// dependency graph
-	graph dependencyGraph
+	// operation dependency depGraph
+	depGraph dependencyGraph
 
 	// instance metrics
-	histroyMetrics map[InstanceID]Metric
+	histroyMetrics map[Instance]Metric
 
 	// trace data source
 	traceSource TraceSource
@@ -83,11 +100,28 @@ func NewWeightUpdater(logger log.Logger, traceSource TraceSource, metricSource M
 	}
 }
 
-func (u *WeightUpdater) UpdateInstance(instanceID string) map[InstanceID]map[string]int {
-	// update dependency from skywalking
+func (u *WeightUpdater) UpdateInstance(ctx context.Context, id string) map[string]map[Instance]int {
+	// try to update dependency from skywalking
+	if ok := u.depGraph.TryLock(); ok {
+		log.Info("start update dependency graph")
+		spans := u.traceSource.ListSpan(ctx, 1*time.Minute)
+		for _, span := range spans {
+			callerOp := span.CallerOp
+			calleeOp := span.CalleeOp
+			if callerOp == "" || calleeOp == "" || callerOp == calleeOp {
+				continue
+			}
+			u.depGraph.Update(Operation(callerOp), Operation(calleeOp), Service(span.CallerSvc), Service(span.CalleeSvc))
+		}
+		u.depGraph.Unlock()
+	}
 
-	// get upstream dependency
+	// get upstream service
+	upstreamSvcs := u.listUpstreamSvc(id)
+	// get upstream service instance
+	for _, svc := range upstreamSvcs {
 
+	}
 	// get current metric of upstream
 
 	// calculate link load factor
@@ -96,4 +130,9 @@ func (u *WeightUpdater) UpdateInstance(instanceID string) map[InstanceID]map[str
 
 	// update instance weight list
 	return nil
+}
+
+func (u *WeightUpdater) listUpstreamSvc(id string) []Service {
+	// TODO
+	return []Service{}
 }
