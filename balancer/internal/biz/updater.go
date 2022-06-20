@@ -2,17 +2,20 @@ package biz
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
 
+const svcOpSep = ":" // service:operation
+
 type (
 	Instance  string
 	Operation string
-	Service   string
 )
+
 type TraceSource interface {
 	ListSpan(context.Context, time.Duration) []Span
 }
@@ -29,22 +32,45 @@ type weightList struct {
 }
 
 type dependencyGraph struct {
-	sync.Mutex
+	mu sync.Mutex
 
 	// operation dependency graph
 	graph map[Operation][]Operation
-
-	serviceMap map[Operation]Service
 }
 
-func (g *dependencyGraph) Update(callerOp Operation, calleeOp Operation, callerSvc Service, calleeSvc Service) {
-	g.graph[callerOp] = append(g.graph[callerOp], calleeOp)
-	if _, has := g.serviceMap[callerOp]; !has {
-		g.serviceMap[callerOp] = callerSvc
+type InstanceInfo struct {
+	ID      string
+	Service string
+	Pod     string
+	Node    string
+	Zone    string
+}
+
+type SerivceInfo struct {
+	Service    string
+	Instances  []Instance
+	Operations []Operation
+}
+
+func (g *dependencyGraph) Update(caller, callee Operation) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	if list, has := g.graph[caller]; has {
+		for _, op := range list {
+			if op == callee {
+				return
+			}
+		}
 	}
-	if _, has := g.serviceMap[calleeOp]; !has {
-		g.serviceMap[calleeOp] = calleeSvc
+	g.graph[caller] = append(g.graph[caller], callee)
+}
+
+func (g *dependencyGraph) GetDependency(operation Operation) []Operation {
+	if res, has := g.graph[operation]; has {
+		return res
 	}
+	return []Operation{}
 }
 
 type Span struct {
@@ -74,8 +100,10 @@ type Metric struct {
 }
 
 type WeightUpdater struct {
-	// instance id -> weight list
-	instances map[Instance]weightList
+	mu         sync.Mutex
+	insWeights map[Instance]weightList // instance id -> weight list
+	insInfos   map[Instance]InstanceInfo
+	svcInfos   map[string]SerivceInfo // service name -> service info
 
 	// operation dependency depGraph
 	depGraph dependencyGraph
@@ -83,11 +111,8 @@ type WeightUpdater struct {
 	// instance metrics
 	histroyMetrics map[Instance]Metric
 
-	// trace data source
-	traceSource TraceSource
-
-	// metric data source
-	metricSource MetricSource
+	traceSource  TraceSource  // trace data source
+	metricSource MetricSource // metric data source
 
 	log log.Helper
 }
@@ -100,24 +125,10 @@ func NewWeightUpdater(logger log.Logger, traceSource TraceSource, metricSource M
 	}
 }
 
-func (u *WeightUpdater) UpdateInstance(ctx context.Context, id string) map[string]map[Instance]int {
-	// try to update dependency from skywalking
-	if ok := u.depGraph.TryLock(); ok {
-		log.Info("start update dependency graph")
-		spans := u.traceSource.ListSpan(ctx, 1*time.Minute)
-		for _, span := range spans {
-			callerOp := span.CallerOp
-			calleeOp := span.CalleeOp
-			if callerOp == "" || calleeOp == "" || callerOp == calleeOp {
-				continue
-			}
-			u.depGraph.Update(Operation(callerOp), Operation(calleeOp), Service(span.CallerSvc), Service(span.CalleeSvc))
-		}
-		u.depGraph.Unlock()
-	}
-
+func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[string]map[Instance]int {
 	// get upstream service
-	upstreamSvcs := u.listUpstreamSvc(id)
+	serviceName := u.insInfos[id].Service
+	upstreamSvcs := u.listUpstreamServices(serviceName)
 	// get upstream service instance
 	for _, svc := range upstreamSvcs {
 
@@ -132,7 +143,88 @@ func (u *WeightUpdater) UpdateInstance(ctx context.Context, id string) map[strin
 	return nil
 }
 
-func (u *WeightUpdater) listUpstreamSvc(id string) []Service {
-	// TODO
-	return []Service{}
+func (u *WeightUpdater) listUpstreamServices(service string) []string {
+	ops := u.svcInfos[service].Operations
+	svcs := map[string]struct{}{}
+
+	for _, op := range ops {
+		stack := []Operation{op}
+		for len(stack) > 0 {
+			cur := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+
+			upops := u.depGraph.GetDependency(cur)
+			if len(upops) == 0 {
+				continue
+			}
+
+			for _, upop := range upops {
+				svc := upop.ServiceName()
+				if _, has := svcs[svc]; has {
+					continue
+				}
+				svcs[svc] = struct{}{}
+				stack = append(stack, upop)
+			}
+		}
+	}
+
+	result := make([]string, 0, len(svcs))
+	for k := range svcs {
+		result = append(result, k)
+	}
+	return result
+}
+
+func (u *WeightUpdater) UpdateDependency(service string, operations []Operation, upstreamOperations []Operation) {
+	// TODO operation 分组
+	for _, caller := range operations {
+		for _, callee := range upstreamOperations {
+			u.depGraph.Update(caller, callee)
+		}
+	}
+	if info, has := u.svcInfos[service]; has {
+		info.Operations = operations
+		u.svcInfos[service] = info
+	}
+}
+
+func (u *WeightUpdater) UpdateInstance(ins InstanceInfo) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.insInfos[Instance(ins.ID)] = ins
+	if info, has := u.svcInfos[ins.Service]; has {
+		info.Instances = append(info.Instances, Instance(ins.ID))
+		u.svcInfos[info.Service] = info
+	} else {
+		u.svcInfos[info.Service] = SerivceInfo{
+			Service:   ins.Service,
+			Instances: []Instance{Instance(ins.ID)},
+		}
+	}
+}
+
+func (u *WeightUpdater) RemoveInstance(id Instance) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	service := u.insInfos[id].Service
+	delete(u.insInfos, id)
+	if info, has := u.svcInfos[service]; has {
+		for i, ins := range info.Instances {
+			if ins == id {
+				info.Instances = append(info.Instances[:i], info.Instances[i+1:]...)
+			}
+		}
+		if len(info.Instances) <= 0 {
+			delete(u.svcInfos, service)
+		}
+	}
+}
+
+func NewOperation(service, operation string) Operation {
+	return Operation(service + svcOpSep + operation)
+}
+
+func (o *Operation) ServiceName() string {
+	return strings.SplitN(string(*o), svcOpSep, 2)[0]
 }

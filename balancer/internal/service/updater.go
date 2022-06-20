@@ -30,9 +30,35 @@ func NewWeightUpdaterService(c *conf.Updater, updater *biz.WeightUpdater, logger
 }
 
 func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpdater_UpdateServer) error {
+	// 更新服务实例信息
+	s.updater.UpdateInstance(biz.InstanceInfo{
+		ID:      in.Instance,
+		Service: in.Service,
+		Pod:     in.Pod,
+		Node:    in.Node,
+		Zone:    in.Zone,
+	})
+
+	operations := make([]biz.Operation, 0, len(in.Operation.Operations))
+	svc := in.Operation.Service
+	for _, op := range in.Operation.Operations {
+		operations = append(operations, biz.NewOperation(svc, op))
+	}
+	upstreamOperations := []biz.Operation{}
+	for _, ops := range in.UpstreamOperation {
+		svc = ops.Service
+		for _, op := range ops.Operations {
+			upstreamOperations = append(upstreamOperations, biz.NewOperation(svc, op))
+		}
+	}
+	s.updater.UpdateDependency(in.Service, operations, upstreamOperations)
+
+	defer s.updater.ClearInstance(biz.Instance(in.Instance))
+
+	// 设置定时更新权重列表
 	ticker := time.NewTicker(s.updateInterval)
 	for {
-		weightsList := s.updater.UpdateInstance(context.Background(), in.InstanceID)
+		weightsList := s.updater.UpdateWeights(context.Background(), biz.Instance(in.Instance))
 		wl := map[string]*v1.Weight{}
 		for op, insWeights := range weightsList {
 			iw := map[string]int32{}
@@ -45,7 +71,7 @@ func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpd
 			log.Infof("update stream error: %v", err)
 			break
 		}
-		log.Infof("update instance %s weight list success", in.InstanceID)
+		log.Infof("update instance %s weight list success", in.Instance)
 		<-ticker.C
 	}
 	ticker.Stop()

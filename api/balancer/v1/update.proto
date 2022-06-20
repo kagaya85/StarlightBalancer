@@ -9,11 +9,22 @@ service WeightUpdater {
 }
 
 message UpdateRequeset {
-  string serviceName = 1;
-  string instanceID = 2;
+  string instance = 2;
+  string service = 1;
+  string pod = 3;
+  string node = 4;
+  string zone = 5;
 
-  // 依赖接口列表
-  repeated string operation = 3;
+  // 提供接口列表
+  OperationList operation = 6;
+  // 依赖上游接口列表
+  repeated OperationList upstreamOperation = 7;
+}
+
+message OperationList {
+  string service = 1;
+  int32 port = 2;
+  repeated string operations = 3;
 }
 
 message UpdateReply {
