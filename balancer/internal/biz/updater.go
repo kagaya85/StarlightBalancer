@@ -31,13 +31,6 @@ type weightList struct {
 	weights map[string]map[string]int
 }
 
-type dependencyGraph struct {
-	mu sync.Mutex
-
-	// operation dependency graph
-	graph map[Operation][]Operation
-}
-
 type InstanceInfo struct {
 	ID      string
 	Service string
@@ -50,6 +43,13 @@ type SerivceInfo struct {
 	Service    string
 	Instances  []Instance
 	Operations []Operation
+}
+
+type dependencyGraph struct {
+	mu sync.Mutex
+
+	// operation dependency graph
+	graph map[Operation][]Operation
 }
 
 func (g *dependencyGraph) Update(caller, callee Operation) {
@@ -71,6 +71,43 @@ func (g *dependencyGraph) GetDependency(operation Operation) []Operation {
 		return res
 	}
 	return []Operation{}
+}
+
+type metricMap struct {
+	mu sync.Mutex
+	m  map[Instance]Metric
+}
+
+func (m *metricMap) GetMetric(id Instance) Metric {
+	return m.m[id]
+}
+
+func (m *metricMap) Update(id Instance, observed Metric) {
+	ewma := func(old, new float64) float64 {
+		beta := 0.8
+		return beta*old + (1-beta)*new
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if history, has := m.m[id]; has {
+		m.m[id] = Metric{
+			CPU:             ewma(history.CPU, observed.CPU),
+			Mem:             ewma(history.Mem, observed.Mem),
+			Load:            int(ewma(float64(history.Load), float64(observed.Load))),
+			ConnectionCount: int(ewma(float64(history.ConnectionCount), float64(observed.ConnectionCount))),
+			ResponseTime:    int(ewma(float64(history.ResponseTime), float64(observed.ResponseTime))),
+			SuccessRate:     ewma(history.SuccessRate, observed.SuccessRate),
+		}
+	} else {
+		m.m[id] = observed
+	}
+}
+
+func (m *metricMap) Clear(id Instance) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.m, id)
 }
 
 type Span struct {
@@ -109,7 +146,7 @@ type WeightUpdater struct {
 	depGraph dependencyGraph
 
 	// instance metrics
-	histroyMetrics map[Instance]Metric
+	insMetrics metricMap
 
 	traceSource  TraceSource  // trace data source
 	metricSource MetricSource // metric data source
@@ -129,12 +166,13 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[stri
 	// get upstream service
 	serviceName := u.insInfos[id].Service
 	upstreamSvcs := u.listUpstreamServices(serviceName)
-	// get upstream service instance
+	// update metric for each upstream instance
 	for _, svc := range upstreamSvcs {
-
+		for _, ins := range u.svcInfos[svc].Instances {
+			observed := u.metricSource.GetByInstanceID(ctx, ins)
+			u.insMetrics.Update(id, observed)
+		}
 	}
-	// get current metric of upstream
-
 	// calculate link load factor
 
 	// genetci algorithm
@@ -219,6 +257,7 @@ func (u *WeightUpdater) RemoveInstance(id Instance) {
 			delete(u.svcInfos, service)
 		}
 	}
+	u.insMetrics.Clear(id)
 }
 
 func NewOperation(service, operation string) Operation {
