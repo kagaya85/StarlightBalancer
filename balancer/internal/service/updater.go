@@ -53,7 +53,7 @@ func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpd
 	}
 	s.updater.UpdateDependency(in.Service, operations, upstreamOperations)
 
-	defer s.updater.ClearInstance(biz.Instance(in.Instance))
+	defer s.updater.RemoveInstance(biz.Instance(in.Instance))
 
 	// 设置定时更新权重列表
 	ticker := time.NewTicker(s.updateInterval)
@@ -65,7 +65,7 @@ func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpd
 			for ins, weight := range insWeights {
 				iw[string(ins)] = int32(weight)
 			}
-			wl[op] = &v1.Weight{InstanceWeight: iw}
+			wl[string(op)] = &v1.Weight{InstanceWeight: iw}
 		}
 		if err := stream.Send(&v1.UpdateReply{WeightList: wl}); err != nil {
 			log.Infof("update stream error: %v", err)

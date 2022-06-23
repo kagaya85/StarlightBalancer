@@ -24,11 +24,20 @@ type MetricSource interface {
 	GetByInstanceID(context.Context, Instance) Metric
 }
 
+type weight struct {
+	instance Instance
+	value    int
+}
+
 type weightList struct {
 	sync.Mutex
 
-	// operation name -> upstream instance id -> weight
-	weights map[string]map[string]int
+	// instance weight list for each upstream operation
+	weights map[Operation][]weight
+}
+
+func (l *weightList) WeightsOf(op Operation) []weight {
+	return l.weights[op]
 }
 
 type InstanceInfo struct {
@@ -43,6 +52,7 @@ type SerivceInfo struct {
 	Service    string
 	Instances  []Instance
 	Operations []Operation
+	Upstreams  []Operation
 }
 
 type dependencyGraph struct {
@@ -162,10 +172,12 @@ func NewWeightUpdater(logger log.Logger, traceSource TraceSource, metricSource M
 	}
 }
 
-func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[string]map[Instance]int {
+func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Operation]map[Instance]int {
 	// get upstream service
-	serviceName := u.insInfos[id].Service
-	upstreamSvcs := u.listUpstreamServices(serviceName)
+	insInfo := u.insInfos[id]
+	upstreams := u.svcInfos[insInfo.Service].Upstreams
+	weightList := u.insWeights[id]
+	upstreamSvcs := u.listUpstreamServices(insInfo.Service)
 	// update metric for each upstream instance
 	for _, svc := range upstreamSvcs {
 		for _, ins := range u.svcInfos[svc].Instances {
@@ -173,12 +185,63 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[stri
 			u.insMetrics.Update(id, observed)
 		}
 	}
-	// calculate link load factor
+	// calculate link load factor for each upstream instance
+	for _, upop := range upstreams {
+		new := u.updateWeights(ctx, insInfo, upop.ServiceName(), weightList.WeightsOf(upop))
+		if ws == nil {
 
-	// genetci algorithm
+		}
+	}
+	// genetic algorithm
 
 	// update instance weight list
 	return nil
+}
+
+func (u *WeightUpdater) updateWeights(ctx context.Context, insInfo InstanceInfo, service string, old []weight) []weight {
+	svcInfo, has := u.svcInfos[service]
+	if !has {
+		log.Errorf("service %s infomation not found", service)
+		return nil
+	}
+
+	fms := make([]GAInsStatus, 0, len(svcInfo.Instances))
+	for _, ins := range svcInfo.Instances {
+		var weight int
+		for _, w := range old {
+			if w.instance == ins {
+				weight = w.value
+				break
+			}
+		}
+		// prepare metric for each instance
+		fms = append(fms, GAInsStatus{
+			Instance:  ins,
+			OldWeight: weight,
+			Metric:    u.insMetrics.GetMetric(ins),
+			LinkLoad:  u.calcLinkLoad(ins),
+
+			IsSameNode: insInfo.Node == u.insInfos[ins].Node,
+			IsSameZone: insInfo.Zone == u.insInfos[ins].Zone,
+		})
+	}
+
+	ga := NewGARunner(GeneticConfig{
+		PopulationSize: 100,
+		MaxGeneration:  100,
+		CrossoverRate:  0.8,
+		MutationRate:   0.1,
+	}, fms)
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return ga.Run(ctx)
+}
+
+func (u *WeightUpdater) calcLinkLoad(ins Instance) int {
+	// TODO
+	return 0
 }
 
 func (u *WeightUpdater) listUpstreamServices(service string) []string {
@@ -214,15 +277,16 @@ func (u *WeightUpdater) listUpstreamServices(service string) []string {
 	return result
 }
 
-func (u *WeightUpdater) UpdateDependency(service string, operations []Operation, upstreamOperations []Operation) {
+func (u *WeightUpdater) UpdateDependency(service string, operations []Operation, upstreams []Operation) {
 	// TODO operation 分组
 	for _, caller := range operations {
-		for _, callee := range upstreamOperations {
+		for _, callee := range upstreams {
 			u.depGraph.Update(caller, callee)
 		}
 	}
 	if info, has := u.svcInfos[service]; has {
 		info.Operations = operations
+		info.Upstreams = upstreams
 		u.svcInfos[service] = info
 	}
 }
