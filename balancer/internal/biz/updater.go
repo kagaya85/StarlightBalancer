@@ -30,14 +30,38 @@ type weight struct {
 }
 
 type weightList struct {
-	sync.Mutex
+	sync.RWMutex
 
 	// instance weight list for each upstream operation
 	weights map[Operation][]weight
+
+	total int
+}
+
+func (l *weightList) TotalWeight() int {
+	l.RLock()
+	defer l.RUnlock()
+	return l.total
 }
 
 func (l *weightList) WeightsOf(op Operation) []weight {
+	l.RLock()
+	defer l.RUnlock()
 	return l.weights[op]
+}
+
+func (l *weightList) Update(op Operation, new []weight) {
+	l.Lock()
+	defer l.Unlock()
+	if old, has := l.weights[op]; has {
+		for _, w := range old {
+			l.total -= w.value
+		}
+	}
+	l.weights[op] = new
+	for _, w := range new {
+		l.total += w.value
+	}
 }
 
 type InstanceInfo struct {
@@ -49,10 +73,10 @@ type InstanceInfo struct {
 }
 
 type SerivceInfo struct {
-	Service    string
-	Instances  []Instance
-	Operations []Operation
-	Upstreams  []Operation
+	Service            string
+	Instances          []Instance
+	Operations         []Operation
+	UpstreamOperations []Operation
 }
 
 type dependencyGraph struct {
@@ -148,7 +172,7 @@ type Metric struct {
 
 type WeightUpdater struct {
 	mu         sync.Mutex
-	insWeights map[Instance]weightList // instance id -> weight list
+	insWeights map[Instance]*weightList // instance id -> weight list
 	insInfos   map[Instance]InstanceInfo
 	svcInfos   map[string]SerivceInfo // service name -> service info
 
@@ -175,7 +199,7 @@ func NewWeightUpdater(logger log.Logger, traceSource TraceSource, metricSource M
 func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Operation]map[Instance]int {
 	// get upstream service
 	insInfo := u.insInfos[id]
-	upstreams := u.svcInfos[insInfo.Service].Upstreams
+	upops := u.svcInfos[insInfo.Service].UpstreamOperations
 	weightList := u.insWeights[id]
 	upstreamSvcs := u.listUpstreamServices(insInfo.Service)
 	// update metric for each upstream instance
@@ -186,22 +210,30 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Oper
 		}
 	}
 	// calculate link load factor for each upstream instance
-	for _, upop := range upstreams {
+	for _, upop := range upops {
 		new := u.updateWeights(ctx, insInfo, upop.ServiceName(), weightList.WeightsOf(upop))
-		if ws == nil {
-
+		if new == nil {
+			continue
 		}
+		weightList.Update(upop, new)
 	}
-	// genetic algorithm
 
-	// update instance weight list
-	return nil
+	results := make(map[Operation]map[Instance]int, len(upops))
+	for _, upop := range upops {
+		ws := weightList.WeightsOf(upop)
+		opresult := make(map[Instance]int, len(ws))
+		for _, w := range ws {
+			opresult[w.instance] = w.value
+		}
+		results[upop] = opresult
+	}
+	return results
 }
 
-func (u *WeightUpdater) updateWeights(ctx context.Context, insInfo InstanceInfo, service string, old []weight) []weight {
-	svcInfo, has := u.svcInfos[service]
+func (u *WeightUpdater) updateWeights(ctx context.Context, insInfo InstanceInfo, upstreamService string, old []weight) []weight {
+	svcInfo, has := u.svcInfos[upstreamService]
 	if !has {
-		log.Errorf("service %s infomation not found", service)
+		log.Errorf("upstream service %s infomation not found", upstreamService)
 		return nil
 	}
 
@@ -239,9 +271,26 @@ func (u *WeightUpdater) updateWeights(ctx context.Context, insInfo InstanceInfo,
 	return ga.Run(ctx)
 }
 
-func (u *WeightUpdater) calcLinkLoad(ins Instance) int {
-	// TODO
-	return 0
+func (u *WeightUpdater) calcLinkLoad(id Instance) int {
+	info := u.insInfos[id]
+	svc := info.Service
+	upops := u.svcInfos[svc].UpstreamOperations
+
+	// check load status for the last instance
+	if len(upops) == 0 {
+		return u.IsOverload(id)
+	}
+
+	// check link load status for the next
+	weights := u.insWeights[id]
+	var load int
+	for _, upop := range upops {
+		for _, w := range weights.WeightsOf(upop) {
+			load += (w.value << 10) / weights.TotalWeight() * u.calcLinkLoad(w.instance)
+		}
+	}
+
+	return load >> 10
 }
 
 func (u *WeightUpdater) listUpstreamServices(service string) []string {
@@ -286,7 +335,7 @@ func (u *WeightUpdater) UpdateDependency(service string, operations []Operation,
 	}
 	if info, has := u.svcInfos[service]; has {
 		info.Operations = operations
-		info.Upstreams = upstreams
+		info.UpstreamOperations = upstreams
 		u.svcInfos[service] = info
 	}
 }

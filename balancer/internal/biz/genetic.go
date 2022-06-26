@@ -3,6 +3,7 @@ package biz
 import (
 	"context"
 	"math"
+	_ "unsafe"
 )
 
 type GeneticConfig struct {
@@ -51,7 +52,10 @@ func NewGARunner(config GeneticConfig, status []GAInsStatus) GeneticRunner {
 		population:     make([][]byte, config.PopulationSize),
 		generation:     0,
 		insStatus:      status,
-		config:         &config,
+
+		mutationThreshold:  uint32(math.MaxUint32 * config.MutationRate),
+		crossoverThreshold: uint32(math.MaxUint32 * config.CrossoverRate),
+		config:             &config,
 	}
 }
 
@@ -60,7 +64,10 @@ type geneticAlgorithm struct {
 	population     [][]byte
 	generation     int
 	insStatus      []GAInsStatus
-	config         *GeneticConfig
+
+	mutationThreshold  uint32
+	crossoverThreshold uint32
+	config             *GeneticConfig
 }
 
 func (ga *geneticAlgorithm) calcFitness(target []byte) int {
@@ -69,6 +76,7 @@ func (ga *geneticAlgorithm) calcFitness(target []byte) int {
 	for _, w := range target {
 		totalWeight += int(w)
 	}
+	// TODO 优化计算方法
 	for i, w := range target {
 		status := ga.insStatus[i]
 		up := (int(w) << 10 / totalWeight) * (50*btoi(status.IsSameNode) + 100*btoi(status.IsSameZone) + int(status.Metric.SuccessRate*100))
@@ -116,16 +124,27 @@ func (ga *geneticAlgorithm) Mutation(target []byte) []byte {
 }
 
 func (ga *geneticAlgorithm) Run(ctx context.Context) []weight {
+	maxFitness := ga.calcFitness(ga.initPopulation)
 	for ga.generation < ga.config.MaxGeneration {
 		if ctx.Err() != nil {
 			break
 		}
 		ga.generation++
 		for i := 0; i < len(ga.population); i++ {
-			target1 := ga.population[i]
-			target2 := ga.population[(i+1)%len(ga.population)]
-			child := ga.Crossover(target1, target2)
-			child = ga.Mutation(child)
+			child := ga.population[i]
+			if fastrandn(math.MaxUint32) < ga.crossoverThreshold {
+				target1 := ga.population[i]
+				target2 := ga.population[(i+1)%len(ga.population)]
+				child = ga.Crossover(target1, target2)
+			}
+			if fastrandn(math.MaxUint32) < ga.mutationThreshold {
+				child = ga.Mutation(child)
+			}
+			f := ga.calcFitness(child)
+			if f > maxFitness {
+				maxFitness = f
+			}
+			// TODO 优化每一代的选择方法
 			ga.population[i] = child
 		}
 	}
