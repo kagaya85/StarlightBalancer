@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package transcode.v1;
+
+option go_package = "api/services/transcode/v1;v1";
+
+service TranscodeService {
+    rpc Transcode(TranscodeRequest) returns (TranscodeResponse) {}
+}
+
+message TranscodeRequest {
+    string source = 1;
+}
+
+message TranscodeResponse {
+    string target = 1;
+}

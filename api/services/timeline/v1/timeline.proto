@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package timeline.v1;
+
+option go_package = "api/services/timeline/v1;v1";
+
+service TimelineService {
+  rpc PushTimeline(PushTimelineRequest) returns (PushTimelineResponse) {}
+}
+
+message PushTimelineRequest {
+  string user_id = 1;
+  repeated string items = 2;
+}
+
+message PushTimelineResponse {
+  int32 status = 1;
+}

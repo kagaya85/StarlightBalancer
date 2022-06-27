@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package audit.v1;
+
+option go_package = "api/services/audit/v1;v1";
+
+service AuditService {
+	rpc Audit(AuditRequest) returns (AuditResponse) {}
+}
+
+message AuditRequest {
+	string id = 1;
+}
+
+message AuditResponse {
+	string result = 1;
+}

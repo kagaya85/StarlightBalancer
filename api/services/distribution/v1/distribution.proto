@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package distribution.v1;
+
+option go_package = "api/services/distribution/v1;v1";
+
+service DistributionService {
+	rpc Distribute(DistributeRequest) returns (DistributeResponse) {}
+}
+
+message DistributeRequest {
+	string id = 1;
+}
+
+message DistributeResponse {
+	int32 code = 1;
+}

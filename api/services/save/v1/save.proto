@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package save.v1;
+
+option go_package = "api/services/save/v1;v1";
+
+service SaveService {
+	rpc Save(SaveRequest) returns (SaveResponse) {}
+}
+
+message SaveRequest {
+	string name = 1;
+	string data = 2;
+}
+
+message SaveResponse {
+	string result = 1;
+}

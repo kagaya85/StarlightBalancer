@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package process.v1;
+
+option go_package = "api/services/process/v1;v1";
+
+service ProcessService {
+	rpc Process(ProcessRequest) returns (ProcessResponse) {}
+}
+
+message ProcessRequest {
+	string id = 1;
+}
+
+message ProcessResponse {
+	string result = 1;
+}

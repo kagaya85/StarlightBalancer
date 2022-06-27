@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package upload.v1;
+
+option go_package = "api/services/upload/v1;v1";
+
+service Uploader {
+  rpc Upload(UploadRequest) returns (UploadResponse) {}
+}
+
+message UploadRequest {
+  string id = 1;
+}
+
+message UploadResponse {
+  string result = 1;
+}

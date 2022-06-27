@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package push.v1;
+
+option go_package = "api/services/push/v1;v1";
+
+service PushService {
+	rpc PushVideo(PushRequest) returns (PushResponse) {}
+}
+
+message PushRequest {
+	string id = 1;
+}
+
+message PushResponse {
+	int32 code = 1;
+}
