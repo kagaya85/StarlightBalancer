@@ -30,28 +30,30 @@ func NewWeightUpdaterService(c *conf.Updater, updater *biz.WeightUpdater, logger
 }
 
 func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpdater_UpdateServer) error {
+	// 假设一个实例只有一个服务
+	svcInfo := in.Info[0]
 	// 更新服务实例信息
 	s.updater.UpdateInstance(biz.InstanceInfo{
 		ID:      in.Instance,
-		Service: in.Service,
+		Service: svcInfo.Service,
 		Pod:     in.Pod,
 		Node:    in.Node,
 		Zone:    in.Zone,
 	})
 
-	operations := make([]biz.Operation, 0, len(in.Operation.Operations))
-	svc := in.Operation.Service
-	for _, op := range in.Operation.Operations {
+	operations := make([]biz.Operation, 0, len(svcInfo.Operations))
+	svc := svcInfo.Service
+	for _, op := range svcInfo.Operations {
 		operations = append(operations, biz.NewOperation(svc, op))
 	}
 	upstreamOperations := []biz.Operation{}
-	for _, ops := range in.UpstreamOperation {
+	for _, ops := range in.Upstream {
 		svc = ops.Service
 		for _, op := range ops.Operations {
 			upstreamOperations = append(upstreamOperations, biz.NewOperation(svc, op))
 		}
 	}
-	s.updater.UpdateDependency(in.Service, operations, upstreamOperations)
+	s.updater.UpdateDependency(svcInfo.Service, operations, upstreamOperations)
 
 	defer s.updater.RemoveInstance(biz.Instance(in.Instance))
 

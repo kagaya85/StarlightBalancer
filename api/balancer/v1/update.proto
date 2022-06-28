@@ -9,30 +9,29 @@ service WeightUpdater {
 }
 
 message UpdateRequeset {
-  string instance = 2;
-  string service = 1;
-  string pod = 3;
-  string node = 4;
-  string zone = 5;
+  string instance = 1;
+  string pod = 2;
+  string node = 3;
+  string zone = 4;
 
-  // 提供接口列表
-  OperationList operation = 6;
-  // 依赖上游接口列表
-  repeated OperationList upstreamOperation = 7;
+  // 服务信息
+  repeated ServiceInfo info = 5;
+  // 依赖上游服务列表
+  repeated ServiceInfo upstream = 6;
 }
 
-message OperationList {
+message ServiceInfo {
   string service = 1;
-  int32 port = 2;
+  string port = 2;
   repeated string operations = 3;
 }
 
 message UpdateReply {
-  // operation -> instance
+  // operation -> endpoint
   map<string, Weight> weightList = 1;
 }
 
 message Weight {
-  // instance -> weight
+  // endpoint -> weight
   map<string, int32> instanceWeight = 1;
 }
