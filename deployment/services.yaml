@@ -1,0 +1,377 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upload
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: upload
+  template:
+    metadata:
+      labels:
+        app: upload
+        zone: cn-shanghai
+    spec:
+      containers:
+        - name: upload
+          image: kagaya85/upload:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9091
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: ZONE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['zone']
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: process
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: process
+  template:
+    metadata:
+      labels:
+        app: process
+        zone: cn-shanghai
+    spec:
+      containers:
+        - name: process
+          image: kagaya85/process:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9092
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: ZONE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['zone']
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: push
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: push
+  template:
+    metadata:
+      labels:
+        app: push
+        zone: cn-shanghai
+    spec:
+      containers:
+        - name: push
+          image: kagaya85/push:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9093
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: ZONE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['zone']
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: audit
+  template:
+    metadata:
+      labels:
+        app: audit
+        zone: cn-shanghai
+    spec:
+      containers:
+        - name: audit
+          image: kagaya85/audit:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9094
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: ZONE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['zone']
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transcode
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: transcode
+  template:
+    metadata:
+      labels:
+        app: transcode
+        zone: cn-shanghai
+    spec:
+      containers:
+        - name: transcode
+          image: kagaya85/transcode:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9095
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: ZONE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['zone']
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: storage
+  template:
+    metadata:
+      labels:
+        app: storage
+        zone: cn-shanghai
+    spec:
+      containers:
+        - name: storage
+          image: kagaya85/storage:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9096
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: ZONE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['zone']
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timeline
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: timeline
+  template:
+    metadata:
+      labels:
+        app: timeline
+        zone: cn-shanghai
+    spec:
+      containers:
+        - name: timeline
+          image: kagaya85/timeline:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9097
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: ZONE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['zone']
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: distribution
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: distribution
+  template:
+    metadata:
+      labels:
+        app: distribution
+        zone: cn-shanghai
+    spec:
+      containers:
+        - name: distribution
+          image: kagaya85/distribution:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9098
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: ZONE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['zone']
+
+---
+
