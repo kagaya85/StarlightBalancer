@@ -4,9 +4,11 @@ import (
 	"context"
 	"flag"
 	"os"
+	"strings"
 
+	"starlight/balancer/client"
 	"starlight/services/upload/internal/conf"
-	"starlight/services/upload/internal/lb"
+	"starlight/services/upload/internal/service"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
@@ -78,8 +80,10 @@ func main() {
 	}
 	defer cleanup()
 
+	service.GlobalBalancer = client.NewBalancerClient(bc.Balancer.Addr, int(bc.Balancer.MaxRetry), Name, strings.Split(bc.Server.Grpc.Addr, ":")[1], logger)
+
 	go func() {
-		if err := lb.GlobalBalancer.Sync(context.TODO(), bc.Balancer, bc.Server); err != nil {
+		if err := service.GlobalBalancer.Sync(context.TODO()); err != nil {
 			panic(err)
 		}
 	}()
