@@ -47,6 +47,7 @@ func (b *Balancer) Sync(ctx context.Context, conf *conf.Balancer, svrconf *conf.
 		if err != nil {
 			if errCount < int(conf.MaxRetry) {
 				errCount++
+				log.Errorf("connect %s error: %s", conf.Addr, err)
 				<-time.After(3 * time.Second)
 				continue
 			}
@@ -76,7 +77,7 @@ func (b *Balancer) Sync(ctx context.Context, conf *conf.Balancer, svrconf *conf.
 			return err
 		}
 		if err := b.sync(stream); err != nil {
-			b.log.Errorf("update stream error %s", err)
+			// b.log.Errorf("update stream error %s", err)
 			continue
 		} else {
 			break

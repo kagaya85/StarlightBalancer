@@ -28,8 +28,20 @@ func wireApp(confServer *conf.Server, confData *conf.Data, updater *conf.Updater
 	greeterUsecase := biz.NewGreeterUsecase(greeterRepo, logger)
 	greeterService := service.NewGreeterService(greeterUsecase)
 	httpServer := server.NewHTTPServer(confServer, greeterService, logger)
-	weightUpdater := biz.NewWeightUpdater(logger)
-	weightUpdaterService := service.NewWeightUpdaterService(weightUpdater, logger)
+	traceData, err := data.NewTraceData(confData, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	traceSource := data.NewTraceSource(traceData, logger)
+	metricData, err := data.NewMetricData(confData, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	metricSource := data.NewMetricSource(metricData, logger)
+	weightUpdater := biz.NewWeightUpdater(logger, traceSource, metricSource)
+	weightUpdaterService := service.NewWeightUpdaterService(updater, weightUpdater, logger)
 	grpcServer := server.NewGRPCServer(confServer, weightUpdaterService, logger)
 	app := newApp(logger, httpServer, grpcServer)
 	return app, func() {

@@ -70,4 +70,5 @@ func (uc *GreeterUsecase) Call(selector lb.Selector) error {
 		log.Fatal(err)
 	}
 	log.Infof("[grpc] SayHello %+v\n", reply)
+	return nil
 }
