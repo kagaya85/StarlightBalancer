@@ -13,6 +13,7 @@ const svcOpSep = ":" // service:operation
 
 type (
 	Instance  string
+	Endpoint  string
 	Operation string
 )
 
@@ -58,6 +59,9 @@ func (l *weightList) Update(op Operation, new []weight) {
 			l.total -= w.value
 		}
 	}
+	if l.total < 0 {
+		l.total = 0
+	}
 	l.weights[op] = new
 	for _, w := range new {
 		l.total += w.value
@@ -67,6 +71,7 @@ func (l *weightList) Update(op Operation, new []weight) {
 type InstanceInfo struct {
 	ID      string
 	Service string
+	Port    string
 	Pod     string
 	Node    string
 	Zone    string
@@ -196,7 +201,7 @@ func NewWeightUpdater(logger log.Logger, traceSource TraceSource, metricSource M
 	}
 }
 
-func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Operation]map[Instance]int {
+func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Operation]map[Endpoint]int {
 	// get upstream service
 	insInfo := u.insInfos[id]
 	upops := u.svcInfos[insInfo.Service].UpstreamOperations
@@ -218,12 +223,13 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Oper
 		weightList.Update(upop, new)
 	}
 
-	results := make(map[Operation]map[Instance]int, len(upops))
+	results := make(map[Operation]map[Endpoint]int, len(upops))
+
 	for _, upop := range upops {
 		ws := weightList.WeightsOf(upop)
-		opresult := make(map[Instance]int, len(ws))
+		opresult := make(map[Endpoint]int, len(ws))
 		for _, w := range ws {
-			opresult[w.instance] = w.value
+			opresult[Endpoint(string(w.instance)+":"+insInfo.Port)] = w.value
 		}
 		results[upop] = opresult
 	}

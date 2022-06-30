@@ -36,6 +36,7 @@ func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpd
 	s.updater.UpdateInstance(biz.InstanceInfo{
 		ID:      in.Instance,
 		Service: svcInfo.Service,
+		Port:    svcInfo.Port,
 		Pod:     in.Pod,
 		Node:    in.Node,
 		Zone:    in.Zone,
@@ -64,8 +65,8 @@ func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpd
 		wl := map[string]*v1.Weight{}
 		for op, insWeights := range weightsList {
 			iw := map[string]int32{}
-			for ins, weight := range insWeights {
-				iw[string(ins)] = int32(weight)
+			for endpoint, weight := range insWeights {
+				iw[string(endpoint)] = int32(weight)
 			}
 			wl[string(op)] = &v1.Weight{InstanceWeight: iw}
 		}
