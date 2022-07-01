@@ -332,51 +332,57 @@ func (u *WeightUpdater) listUpstreamServices(service string) []string {
 	return result
 }
 
-func (u *WeightUpdater) UpdateDependency(service string, operations []Operation, upstreams []Operation) {
+func (u *WeightUpdater) UpdateDependency(operations []Operation, upstreams []Operation) {
 	// TODO operation 分组
 	for _, caller := range operations {
 		for _, callee := range upstreams {
+			u.log.Debugf("add dependency %s -> %s", caller, callee)
 			u.depGraph.Update(caller, callee)
 		}
 	}
-	if info, has := u.svcInfos[service]; has {
-		info.Operations = operations
-		info.UpstreamOperations = upstreams
-		u.svcInfos[service] = info
-	}
 }
 
-func (u *WeightUpdater) UpdateInstance(ins InstanceInfo) {
+func (u *WeightUpdater) UpdateInstance(ins InstanceInfo, operations []Operation, upstreams []Operation) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	u.insInfos[Instance(ins.ID)] = ins
 	if info, has := u.svcInfos[ins.Service]; has {
 		info.Instances = append(info.Instances, Instance(ins.ID))
+		info.Operations = operations
+		info.UpstreamOperations = upstreams
 		u.svcInfos[info.Service] = info
+		u.log.Infow("service", info.Service, "instances count", len(info.Instances))
 	} else {
 		u.svcInfos[info.Service] = SerivceInfo{
-			Service:   ins.Service,
-			Instances: []Instance{Instance(ins.ID)},
+			Service:            ins.Service,
+			Instances:          []Instance{Instance(ins.ID)},
+			Operations:         operations,
+			UpstreamOperations: upstreams,
 		}
+		u.log.Infow("new service", info.Service)
 	}
 }
 
-func (u *WeightUpdater) RemoveInstance(id Instance) {
+func (u *WeightUpdater) RemoveInstance(target Instance) {
 	u.mu.Lock()
-	defer u.mu.Unlock()
-	service := u.insInfos[id].Service
-	delete(u.insInfos, id)
+	service := u.insInfos[target].Service
 	if info, has := u.svcInfos[service]; has {
 		for i, ins := range info.Instances {
-			if ins == id {
+			if ins == target {
 				info.Instances = append(info.Instances[:i], info.Instances[i+1:]...)
+				u.log.Debugf("remove instance %s from list", target)
+				break
 			}
 		}
 		if len(info.Instances) <= 0 {
 			delete(u.svcInfos, service)
+			u.log.Infow("no alived instance, remove service", service)
 		}
 	}
-	u.insMetrics.Clear(id)
+	delete(u.insInfos, target)
+	u.log.Infow("remove instance", target)
+	u.mu.Unlock()
+	u.insMetrics.Clear(target)
 }
 
 func NewOperation(service, operation string) Operation {
