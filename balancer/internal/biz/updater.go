@@ -91,18 +91,19 @@ type dependencyGraph struct {
 	graph map[Operation][]Operation
 }
 
-func (g *dependencyGraph) Update(caller, callee Operation) {
+func (g *dependencyGraph) Update(caller, callee Operation) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
 	if list, has := g.graph[caller]; has {
 		for _, op := range list {
 			if op == callee {
-				return
+				return false
 			}
 		}
 	}
 	g.graph[caller] = append(g.graph[caller], callee)
+	return true
 }
 
 func (g *dependencyGraph) GetDependency(operation Operation) []Operation {
@@ -166,13 +167,13 @@ type Span struct {
 
 type Metric struct {
 	CPU float64 // pod cpu usage rate
-	Mem float64 // pod memory usage rate
+	Mem float64 // pod memory usage rate (0~1)
 
 	Load            int // node exporter
 	ConnectionCount int // node_netstat_Tcp_ActiveOpens
 
-	ResponseTime int     // app range response time
-	SuccessRate  float64 // app range success rate
+	ResponseTime int     // app range response time (ms)
+	SuccessRate  float64 // app range success rate (0~1)
 }
 
 type WeightUpdater struct {
@@ -212,6 +213,7 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Oper
 		for _, ins := range u.svcInfos[svc].Instances {
 			observed := u.metricSource.GetByInstanceID(ctx, ins)
 			u.insMetrics.Update(id, observed)
+			u.log.Debugf("update %s metric %v", id, u.insMetrics.GetMetric(id))
 		}
 	}
 	// calculate link load factor for each upstream instance
@@ -221,6 +223,7 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Oper
 			continue
 		}
 		weightList.Update(upop, new)
+		u.log.Debugf("update %s upstream weights %s: %v", id, upop, new)
 	}
 
 	results := make(map[Operation]map[Endpoint]int, len(upops))
@@ -266,7 +269,7 @@ func (u *WeightUpdater) updateWeights(ctx context.Context, insInfo InstanceInfo,
 
 	ga := NewGARunner(GeneticConfig{
 		PopulationSize: 100,
-		MaxGeneration:  100,
+		MaxGeneration:  1000,
 		CrossoverRate:  0.8,
 		MutationRate:   0.1,
 	}, fms)
@@ -303,25 +306,24 @@ func (u *WeightUpdater) listUpstreamServices(service string) []string {
 	ops := u.svcInfos[service].Operations
 	svcs := map[string]struct{}{}
 
-	for _, op := range ops {
-		stack := []Operation{op}
-		for len(stack) > 0 {
-			cur := stack[len(stack)-1]
-			stack = stack[:len(stack)-1]
+	stack := make([]Operation, 0, len(ops))
+	stack = append(stack, ops...)
+	for len(stack) > 0 {
+		cur := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
 
-			upops := u.depGraph.GetDependency(cur)
-			if len(upops) == 0 {
+		upops := u.depGraph.GetDependency(cur)
+		if len(upops) == 0 {
+			continue
+		}
+
+		for _, upop := range upops {
+			svc := upop.ServiceName()
+			if _, has := svcs[svc]; has {
 				continue
 			}
-
-			for _, upop := range upops {
-				svc := upop.ServiceName()
-				if _, has := svcs[svc]; has {
-					continue
-				}
-				svcs[svc] = struct{}{}
-				stack = append(stack, upop)
-			}
+			svcs[svc] = struct{}{}
+			stack = append(stack, upop)
 		}
 	}
 
@@ -336,8 +338,9 @@ func (u *WeightUpdater) UpdateDependency(operations []Operation, upstreams []Ope
 	// TODO operation 分组
 	for _, caller := range operations {
 		for _, callee := range upstreams {
-			u.log.Debugf("add dependency %s -> %s", caller, callee)
-			u.depGraph.Update(caller, callee)
+			if ok := u.depGraph.Update(caller, callee); ok {
+				u.log.Debugf("add dependency %s -> %s", caller, callee)
+			}
 		}
 	}
 }

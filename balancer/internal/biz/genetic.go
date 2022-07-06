@@ -47,23 +47,25 @@ func NewGARunner(config GeneticConfig, status []GAInsStatus) GeneticRunner {
 		}
 		initPop[i] = w
 	}
-	return &geneticAlgorithm{
-		initPopulation: initPop,
-		population:     make([][]byte, config.PopulationSize),
-		generation:     0,
-		insStatus:      status,
+	ga := &geneticAlgorithm{
+		initPop:    initPop,
+		population: make([][]byte, config.PopulationSize),
+		generation: 0,
+		insStatus:  status,
 
 		mutationThreshold:  uint32(math.MaxUint32 * config.MutationRate),
 		crossoverThreshold: uint32(math.MaxUint32 * config.CrossoverRate),
 		config:             &config,
 	}
+	ga.InitPopulation()
+	return ga
 }
 
 type geneticAlgorithm struct {
-	initPopulation []byte
-	population     [][]byte
-	generation     int
-	insStatus      []GAInsStatus
+	initPop    []byte
+	population [][]byte
+	generation int
+	insStatus  []GAInsStatus
 
 	mutationThreshold  uint32
 	crossoverThreshold uint32
@@ -87,9 +89,9 @@ func (ga *geneticAlgorithm) calcFitness(target []byte) int {
 }
 
 func (ga *geneticAlgorithm) InitPopulation() {
-	ga.population[0] = ga.initPopulation
+	ga.population[0] = ga.initPop
 	for i := 1; i < len(ga.population); i++ {
-		ga.population[i] = make([]byte, len(ga.initPopulation))
+		ga.population[i] = make([]byte, len(ga.initPop))
 		for j := 0; j < len(ga.population[0]); j++ {
 			ga.population[i][j] = randbyte()
 		}
@@ -124,7 +126,7 @@ func (ga *geneticAlgorithm) Mutation(target []byte) []byte {
 }
 
 func (ga *geneticAlgorithm) Run(ctx context.Context) []weight {
-	maxFitness := ga.calcFitness(ga.initPopulation)
+	maxFitness := ga.calcFitness(ga.initPop)
 	for ga.generation < ga.config.MaxGeneration {
 		if ctx.Err() != nil {
 			break
@@ -161,7 +163,7 @@ func (ga *geneticAlgorithm) bestWeights() []weight {
 			bestFitness = fitness
 		}
 	}
-	weights := make([]weight, len(ga.population))
+	weights := make([]weight, len(ga.initPop))
 	for i := 0; i < len(best); i++ {
 		weights[i] = weight{
 			value:    int(best[i]),
