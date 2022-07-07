@@ -17,7 +17,11 @@ message Server {
     string addr = 2;
     google.protobuf.Duration timeout = 3;
   }
+  message Prometheus {
+    string port = 1;
+  }
   GRPC grpc = 1;
+  Prometheus prometheus = 2;
 }
 
 message Data {
