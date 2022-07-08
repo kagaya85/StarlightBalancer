@@ -1,0 +1,38 @@
+syntax = "proto3";
+package kratos.api;
+
+option go_package = "starlight/services/upload/internal/conf;conf";
+
+import "google/protobuf/duration.proto";
+
+message Bootstrap {
+  Server server = 1;
+  Data data = 2;
+  Balancer balancer = 3;
+}
+
+message Server {
+  message GRPC {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration timeout = 3;
+  }
+  message Prometheus {
+    string port = 1;
+  }
+  GRPC grpc = 1;
+  Prometheus prometheus = 2;
+}
+
+message Data {
+  message Database {
+    string driver = 1;
+    string source = 2;
+  }
+  Database database = 1;
+}
+
+message Balancer {
+  string addr = 1;
+  int64 maxRetry = 2;
+}

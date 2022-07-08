@@ -3,7 +3,7 @@ package biz
 import (
 	"context"
 
-	v1 "starlight/api/services/process/v1"
+	v1 "starlight/api/services/audit/v1"
 	"starlight/balancer/client"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -16,8 +16,8 @@ type Item struct {
 	Hello string
 }
 
-// UploaderRepo is a Greater repo.
-type UploaderRepo interface {
+// ProcesserRepo is a Greater repo.
+type ProcesserRepo interface {
 	Save(context.Context, *Item) (*Item, error)
 	Update(context.Context, *Item) (*Item, error)
 	FindByID(context.Context, int64) (*Item, error)
@@ -25,21 +25,22 @@ type UploaderRepo interface {
 	ListAll(context.Context) ([]*Item, error)
 }
 
-// UploaderUsecase is a Greeter usecase.
-type UploaderUsecase struct {
-	repo UploaderRepo
+// ProcesserUsecase is a Greeter usecase.
+type ProcesserUsecase struct {
+	repo ProcesserRepo
 	log  *log.Helper
 }
 
-// NewUploaderUsecase new a Greeter usecase.
-func NewUploaderUsecase(repo UploaderRepo, logger log.Logger) *UploaderUsecase {
-	return &UploaderUsecase{repo: repo, log: log.NewHelper(logger)}
+// NewProcesserUsecase new a Greeter usecase.
+func NewProcesserUsecase(repo ProcesserRepo, logger log.Logger) *ProcesserUsecase {
+	return &ProcesserUsecase{repo: repo, log: log.NewHelper(logger)}
 }
 
-func (uc *UploaderUsecase) Call(ctx context.Context, selector client.Selector) error {
-	ep, err := selector("ProcessService")
+func (uc *ProcesserUsecase) Call(ctx context.Context, selector client.Selector) string {
+	ep, err := selector("AuditService")
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
+		return ""
 	}
 	conn, err := grpc.DialInsecure(
 		context.Background(),
@@ -52,11 +53,11 @@ func (uc *UploaderUsecase) Call(ctx context.Context, selector client.Selector) e
 		panic(err)
 	}
 	defer conn.Close()
-	client := v1.NewProcessServiceClient(conn)
-	reply, err := client.Process(ctx, &v1.ProcessRequest{Id: "2233"})
+	client := v1.NewAuditServiceClient(conn)
+	reply, err := client.Audit(ctx, &v1.AuditRequest{Id: "2233"})
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("[grpc] Process reply %+v\n", reply)
-	return nil
+	log.Infof("[grpc] Audit reply %+v\n", reply)
+	return reply.GetResult()
 }
