@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"starlight/services/upload/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -34,7 +35,7 @@ var (
 
 func NewMetricServer(c *conf.Server, logger log.Logger) *http.Server {
 	srv := http.NewServer(
-		http.Address("0.0.0.0:"+c.Prometheus.Port),
+		http.Address(fmt.Sprintf("0.0.0.0:%d", c.Prometheus.Port)),
 		http.Middleware(
 			recovery.Recovery(),
 		),

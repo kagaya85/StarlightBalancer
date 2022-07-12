@@ -166,8 +166,8 @@ func (ga *geneticAlgorithm) bestWeights() []weight {
 	weights := make([]weight, len(ga.initPop))
 	for i := 0; i < len(best); i++ {
 		weights[i] = weight{
-			value:    int(best[i]),
-			instance: ga.insStatus[i].Instance,
+			ins:   ga.insStatus[i].Instance,
+			value: int(best[i]),
 		}
 	}
 	return weights

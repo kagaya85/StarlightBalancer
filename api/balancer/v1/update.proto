@@ -10,14 +10,15 @@ service WeightUpdater {
 
 message UpdateRequeset {
   string instance = 1;
-  string pod = 2;
-  string node = 3;
-  string zone = 4;
+  string podIP = 2;
+  string pod = 3;
+  string node = 4;
+  string zone = 5;
 
   // 服务信息
-  repeated ServiceInfo info = 5;
+  repeated ServiceInfo info = 6;
   // 依赖上游服务列表
-  repeated ServiceInfo upstream = 6;
+  repeated ServiceInfo upstream = 7;
 }
 
 message ServiceInfo {

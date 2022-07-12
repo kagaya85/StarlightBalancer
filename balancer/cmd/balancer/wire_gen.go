@@ -20,31 +20,20 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, updater *conf.Updater, logger log.Logger) (*kratos.App, func(), error) {
-	dataData, cleanup, err := data.NewData(confData, logger)
-	if err != nil {
-		return nil, nil, err
-	}
-	greeterRepo := data.NewGreeterRepo(dataData, logger)
-	greeterUsecase := biz.NewGreeterUsecase(greeterRepo, logger)
-	greeterService := service.NewGreeterService(greeterUsecase)
-	httpServer := server.NewHTTPServer(confServer, greeterService, logger)
 	traceData, err := data.NewTraceData(confData, logger)
 	if err != nil {
-		cleanup()
 		return nil, nil, err
 	}
 	traceSource := data.NewTraceSource(traceData, logger)
 	metricData, err := data.NewMetricData(confData, logger)
 	if err != nil {
-		cleanup()
 		return nil, nil, err
 	}
 	metricSource := data.NewMetricSource(metricData, logger)
 	weightUpdater := biz.NewWeightUpdater(logger, traceSource, metricSource)
 	weightUpdaterService := service.NewWeightUpdaterService(updater, weightUpdater, logger)
 	grpcServer := server.NewGRPCServer(confServer, weightUpdaterService, logger)
-	app := newApp(logger, httpServer, grpcServer)
+	app := newApp(logger, grpcServer)
 	return app, func() {
-		cleanup()
 	}, nil
 }

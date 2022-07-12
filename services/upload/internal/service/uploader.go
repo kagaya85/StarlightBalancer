@@ -12,17 +12,17 @@ import (
 // global weight list for load balance
 var GlobalBalancer *client.BalancerClient
 
-type UploaderService struct {
-	pb.UnimplementedUploaderServer
+type UploadService struct {
+	pb.UnimplementedUploadServiceServer
 
 	uc *biz.UploaderUsecase
 }
 
-func NewUploaderService(uc *biz.UploaderUsecase) *UploaderService {
-	return &UploaderService{uc: uc}
+func NewUploaderService(uc *biz.UploaderUsecase) *UploadService {
+	return &UploadService{uc: uc}
 }
 
-func (s *UploaderService) Upload(ctx context.Context, req *pb.UploadRequest) (*pb.UploadResponse, error) {
+func (s *UploadService) Upload(ctx context.Context, req *pb.UploadRequest) (*pb.UploadResponse, error) {
 	s.uc.Call(ctx, GlobalBalancer.Random)
 	return &pb.UploadResponse{}, nil
 }

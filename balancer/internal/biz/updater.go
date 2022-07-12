@@ -26,8 +26,8 @@ type MetricSource interface {
 }
 
 type weight struct {
-	instance Instance
-	value    int
+	ins   Instance
+	value int
 }
 
 type weightList struct {
@@ -73,6 +73,7 @@ type InstanceInfo struct {
 	Service string
 	Port    string
 	Pod     string
+	PodIP   string
 	Node    string
 	Zone    string
 }
@@ -89,6 +90,12 @@ type dependencyGraph struct {
 
 	// operation dependency graph
 	graph map[Operation][]Operation
+}
+
+func NewDependencyGraph() *dependencyGraph {
+	return &dependencyGraph{
+		graph: map[Operation][]Operation{},
+	}
 }
 
 func (g *dependencyGraph) Update(caller, callee Operation) bool {
@@ -116,6 +123,12 @@ func (g *dependencyGraph) GetDependency(operation Operation) []Operation {
 type metricMap struct {
 	mu sync.Mutex
 	m  map[Instance]Metric
+}
+
+func NewMetricMap() *metricMap {
+	return &metricMap{
+		m: map[Instance]Metric{},
+	}
 }
 
 func (m *metricMap) GetMetric(id Instance) Metric {
@@ -183,10 +196,10 @@ type WeightUpdater struct {
 	svcInfos   map[string]SerivceInfo // service name -> service info
 
 	// operation dependency depGraph
-	depGraph dependencyGraph
+	depGraph *dependencyGraph
 
 	// instance metrics
-	insMetrics metricMap
+	insMetrics *metricMap
 
 	traceSource  TraceSource  // trace data source
 	metricSource MetricSource // metric data source
@@ -196,9 +209,17 @@ type WeightUpdater struct {
 
 func NewWeightUpdater(logger log.Logger, traceSource TraceSource, metricSource MetricSource) *WeightUpdater {
 	return &WeightUpdater{
-		log:          *log.NewHelper(logger),
+		insWeights: map[Instance]*weightList{},
+		insInfos:   map[Instance]InstanceInfo{},
+		svcInfos:   map[string]SerivceInfo{},
+
+		depGraph:   NewDependencyGraph(),
+		insMetrics: NewMetricMap(),
+
 		traceSource:  traceSource,
 		metricSource: metricSource,
+
+		log: *log.NewHelper(logger),
 	}
 }
 
@@ -232,7 +253,7 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Oper
 		ws := weightList.WeightsOf(upop)
 		opresult := make(map[Endpoint]int, len(ws))
 		for _, w := range ws {
-			opresult[Endpoint(string(w.instance)+":"+insInfo.Port)] = w.value
+			opresult[Endpoint(u.insInfos[w.ins].PodIP+":"+insInfo.Port)] = w.value
 		}
 		results[upop] = opresult
 	}
@@ -250,7 +271,7 @@ func (u *WeightUpdater) updateWeights(ctx context.Context, insInfo InstanceInfo,
 	for _, ins := range svcInfo.Instances {
 		var weight int
 		for _, w := range old {
-			if w.instance == ins {
+			if w.ins == ins {
 				weight = w.value
 				break
 			}
@@ -295,7 +316,7 @@ func (u *WeightUpdater) calcLinkLoad(id Instance) int {
 	var load int
 	for _, upop := range upops {
 		for _, w := range weights.WeightsOf(upop) {
-			load += (w.value << 10) / weights.TotalWeight() * u.calcLinkLoad(w.instance)
+			load += (w.value << 10) / weights.TotalWeight() * u.calcLinkLoad(w.ins)
 		}
 	}
 
@@ -383,7 +404,7 @@ func (u *WeightUpdater) RemoveInstance(target Instance) {
 		}
 	}
 	delete(u.insInfos, target)
-	u.log.Infow("remove instance", target)
+	u.log.Infof("instance %s removed", target)
 	u.mu.Unlock()
 	u.insMetrics.Clear(target)
 }

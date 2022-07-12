@@ -25,13 +25,13 @@ type ProcesserRepo interface {
 	ListAll(context.Context) ([]*Item, error)
 }
 
-// ProcesserUsecase is a Greeter usecase.
+// ProcesserUsecase is a Processer usecase.
 type ProcesserUsecase struct {
 	repo ProcesserRepo
 	log  *log.Helper
 }
 
-// NewProcesserUsecase new a Greeter usecase.
+// NewProcesserUsecase new a Processer usecase.
 func NewProcesserUsecase(repo ProcesserRepo, logger log.Logger) *ProcesserUsecase {
 	return &ProcesserUsecase{repo: repo, log: log.NewHelper(logger)}
 }

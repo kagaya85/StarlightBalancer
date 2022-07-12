@@ -4,7 +4,7 @@ package upload.v1;
 
 option go_package = "api/services/upload/v1;v1";
 
-service Uploader {
+service UploadService {
   rpc Upload(UploadRequest) returns (UploadResponse) {}
 }
 

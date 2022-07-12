@@ -47,7 +47,7 @@ func NewBalancerClient(serverAddr string, maxRetry int, serviceName string, port
 	}
 }
 
-func (b *BalancerClient) Sync(ctx context.Context) error {
+func (b *BalancerClient) Sync(ctx context.Context, instanceId string) error {
 	errCount := 0
 	for {
 		conn, err := grpc.DialInsecure(ctx, grpc.WithEndpoint(b.serverAddr))
@@ -68,8 +68,13 @@ func (b *BalancerClient) Sync(ctx context.Context) error {
 			return err
 		}
 
+		ip := os.Getenv("POD_IP")
+		if ip == "" {
+			ip = "127.0.0.1"
+		}
 		req := &v1.UpdateRequeset{
-			Instance: os.Getenv("POD_IP"),
+			Instance: instanceId,
+			PodIP:    ip,
 			Pod:      os.Getenv("POD_NAME"),
 			Node:     os.Getenv("NODE_NAME"),
 			Zone:     os.Getenv("ZONE_NAME"),
@@ -117,6 +122,7 @@ func (b *BalancerClient) sync(stream v1.WeightUpdater_UpdateClient) error {
 		b.mu.Lock()
 		b.list = list
 		b.mu.Unlock()
+		b.log.Infof("update weight list: %v", list)
 	}
 	return nil
 }

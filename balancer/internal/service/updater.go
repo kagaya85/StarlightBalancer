@@ -31,12 +31,17 @@ func NewWeightUpdaterService(c *conf.Updater, updater *biz.WeightUpdater, logger
 
 func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpdater_UpdateServer) error {
 	// 假设一个实例只有一个服务
+	if len(in.Info) < 1 {
+		s.log.Errorf("no service info: %v", in.Info)
+		return nil
+	}
 	svcInfo := in.Info[0]
 	insInfo := biz.InstanceInfo{
 		ID:      in.Instance,
 		Service: svcInfo.Service,
 		Port:    svcInfo.Port,
 		Pod:     in.Pod,
+		PodIP:   in.PodIP,
 		Node:    in.Node,
 		Zone:    in.Zone,
 	}
@@ -57,14 +62,14 @@ func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpd
 	// 更新服务实例信息
 	s.updater.UpdateInstance(insInfo, operations, upstreamOperations)
 	s.updater.UpdateDependency(operations, upstreamOperations)
-	s.log.Infof("update instance info: %v", insInfo)
+	s.log.Infof("update instance info: %v, upstream: %v", insInfo, upstreamOperations)
 
 	defer s.updater.RemoveInstance(biz.Instance(in.Instance))
 
 	// 设置定时更新权重列表
 	ticker := time.NewTicker(s.updateInterval)
+	log.Infof("start update loop, service: %s, interval: %d(s)", svcInfo.Service, s.updateInterval/time.Second)
 	for {
-		log.Infof("start update loop, service: %s, interval: %d(s)", svcInfo.Service, s.updateInterval/time.Second)
 		weightsList := s.updater.UpdateWeights(context.Background(), biz.Instance(in.Instance))
 		wl := map[string]*v1.Weight{}
 		for op, insWeights := range weightsList {

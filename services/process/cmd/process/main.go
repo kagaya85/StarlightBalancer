@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"strconv"
 	"strings"
 
 	"starlight/balancer/client"
@@ -22,13 +23,15 @@ import (
 // go build -ldflags "-X main.Version=x.y.z"
 var (
 	// Name is the name of the compiled software.
-	Name string
+	Name string = "ProcessService"
 	// Version is the version of the compiled software.
 	Version string
 	// flagconf is the config flag.
 	flagconf string
 
-	id, _ = os.Hostname()
+	osname, _ = os.Hostname()
+
+	id = osname + "#" + strconv.Itoa(os.Getpid())
 )
 
 func init() {
@@ -85,7 +88,7 @@ func main() {
 	service.GlobalBalancer = client.NewBalancerClient(bc.Balancer.Addr, int(bc.Balancer.MaxRetry), Name, strings.Split(bc.Server.Grpc.Addr, ":")[1], logger)
 
 	go func() {
-		if err := service.GlobalBalancer.Sync(context.TODO()); err != nil {
+		if err := service.GlobalBalancer.Sync(context.TODO(), id); err != nil {
 			panic(err)
 		}
 	}()
