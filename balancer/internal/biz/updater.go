@@ -36,13 +36,13 @@ type weightList struct {
 	// instance weight list for each upstream operation
 	weights map[Operation][]weight
 
-	total int
+	total map[Operation]int
 }
 
-func (l *weightList) TotalWeight() int {
+func (l *weightList) TotalWeight(op Operation) int {
 	l.RLock()
 	defer l.RUnlock()
-	return l.total
+	return l.total[op]
 }
 
 func (l *weightList) WeightsOf(op Operation) []weight {
@@ -56,15 +56,15 @@ func (l *weightList) Update(op Operation, new []weight) {
 	defer l.Unlock()
 	if old, has := l.weights[op]; has {
 		for _, w := range old {
-			l.total -= w.value
+			l.total[op] -= w.value
 		}
 	}
-	if l.total < 0 {
-		l.total = 0
+	if l.total[op] < 0 {
+		l.total[op] = 0
 	}
 	l.weights[op] = new
 	for _, w := range new {
-		l.total += w.value
+		l.total[op] += w.value
 	}
 }
 
@@ -261,15 +261,28 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Oper
 }
 
 func (u *WeightUpdater) updateWeights(ctx context.Context, insInfo InstanceInfo, upstreamService string, old []weight) []weight {
+	initWeight := 100
 	svcInfo, has := u.svcInfos[upstreamService]
 	if !has {
 		log.Errorf("upstream service %s infomation not found", upstreamService)
 		return nil
 	}
-
-	fms := make([]GAInsStatus, 0, len(svcInfo.Instances))
+	insNum := len(svcInfo.Instances)
+	if insNum < 1 {
+		log.Debugf("no avaliable instance for service %s", upstreamService)
+		return []weight{}
+	}
+	if insNum == 1 {
+		return []weight{
+			{
+				ins:   svcInfo.Instances[0],
+				value: initWeight,
+			},
+		}
+	}
+	fms := make([]GAInsStatus, 0, insNum)
 	for _, ins := range svcInfo.Instances {
-		var weight int
+		var weight int = initWeight
 		for _, w := range old {
 			if w.ins == ins {
 				weight = w.value
@@ -315,8 +328,12 @@ func (u *WeightUpdater) calcLinkLoad(id Instance) int {
 	weights := u.insWeights[id]
 	var load int
 	for _, upop := range upops {
+		total := weights.TotalWeight(upop)
+		if total == 0 {
+			total = 1
+		}
 		for _, w := range weights.WeightsOf(upop) {
-			load += (w.value << 10) / weights.TotalWeight() * u.calcLinkLoad(w.ins)
+			load += (w.value << 10) / total * u.calcLinkLoad(w.ins)
 		}
 	}
 
@@ -355,6 +372,19 @@ func (u *WeightUpdater) listUpstreamServices(service string) []string {
 	return result
 }
 
+func (u *WeightUpdater) initWeightList(id Instance) *weightList {
+	svc := u.insInfos[id].Service
+	ops := u.svcInfos[svc].Operations
+	weights := make(map[Operation][]weight, len(ops))
+	for _, op := range ops {
+		weights[op] = []weight{}
+	}
+	return &weightList{
+		weights: weights,
+		total:   make(map[Operation]int),
+	}
+}
+
 func (u *WeightUpdater) UpdateDependency(operations []Operation, upstreams []Operation) {
 	// TODO operation 分组
 	for _, caller := range operations {
@@ -369,22 +399,23 @@ func (u *WeightUpdater) UpdateDependency(operations []Operation, upstreams []Ope
 func (u *WeightUpdater) UpdateInstance(ins InstanceInfo, operations []Operation, upstreams []Operation) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	u.insInfos[Instance(ins.ID)] = ins
 	if info, has := u.svcInfos[ins.Service]; has {
 		info.Instances = append(info.Instances, Instance(ins.ID))
 		info.Operations = operations
 		info.UpstreamOperations = upstreams
-		u.svcInfos[info.Service] = info
-		u.log.Infow("service", info.Service, "instances count", len(info.Instances))
+		u.svcInfos[ins.Service] = info
+		u.log.Infow("new instance of service", info.Service, "instances count", len(info.Instances))
 	} else {
-		u.svcInfos[info.Service] = SerivceInfo{
+		u.svcInfos[ins.Service] = SerivceInfo{
 			Service:            ins.Service,
 			Instances:          []Instance{Instance(ins.ID)},
 			Operations:         operations,
 			UpstreamOperations: upstreams,
 		}
-		u.log.Infow("new service", info.Service)
+		u.log.Infow("add new service", ins.Service)
 	}
+	u.insInfos[Instance(ins.ID)] = ins
+	u.insWeights[Instance(ins.ID)] = u.initWeightList(Instance(ins.ID))
 }
 
 func (u *WeightUpdater) RemoveInstance(target Instance) {
@@ -394,7 +425,7 @@ func (u *WeightUpdater) RemoveInstance(target Instance) {
 		for i, ins := range info.Instances {
 			if ins == target {
 				info.Instances = append(info.Instances[:i], info.Instances[i+1:]...)
-				u.log.Debugf("remove instance %s from list", target)
+				u.log.Debugf("remove %s from instance list", target)
 				break
 			}
 		}
