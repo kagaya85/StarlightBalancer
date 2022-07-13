@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
@@ -26,7 +27,7 @@ type Weight struct {
 }
 
 type BalancerClient struct {
-	mu   sync.Mutex
+	l    sync.RWMutex
 	list map[string][]Weight // key: service, value: weight list
 
 	serverAddr  string
@@ -119,36 +120,78 @@ func (b *BalancerClient) sync(stream v1.WeightUpdater_UpdateClient) error {
 				})
 			}
 		}
-		b.mu.Lock()
+		b.l.Lock()
 		b.list = list
-		b.mu.Unlock()
+		b.l.Unlock()
 		b.log.Infof("update weight list: %v", list)
 	}
 	return nil
 }
 
 func (b *BalancerClient) Random(service string) (string, error) {
-	return "", nil
+	b.l.RLock()
+	defer b.l.RUnlock()
+	list := b.list[service]
+	n := len(list)
+	if n == 0 {
+		return "", ErrNoEndpoint
+	}
+	return list[rand.Intn(n)].endpoint, nil
 }
 
 func (b *BalancerClient) WRandom(service string) (string, error) {
-	return "", nil
+	b.l.RLock()
+	defer b.l.RUnlock()
+	list := b.list[service]
+	n := len(list)
+	if n == 0 {
+		return "", ErrNoEndpoint
+	}
+	return list[rand.Intn(n)].endpoint, nil
 }
 
 func (b *BalancerClient) DWRandom(service string) (string, error) {
-	return "", nil
+	b.l.RLock()
+	defer b.l.RUnlock()
+	list := b.list[service]
+	n := len(list)
+	if n == 0 {
+		return "", ErrNoEndpoint
+	}
+	return list[rand.Intn(n)].endpoint, nil
 }
 
 func (b *BalancerClient) RR(service string) (string, error) {
-	return "", nil
+	b.l.RLock()
+	defer b.l.RUnlock()
+	list := b.list[service]
+	n := len(list)
+	if n == 0 {
+		return "", ErrNoEndpoint
+	}
+	return list[rand.Intn(n)].endpoint, nil
 }
 
 func (b *BalancerClient) WRR(service string) (string, error) {
-	return "", nil
+	b.l.RLock()
+	defer b.l.RUnlock()
+	list := b.list[service]
+	n := len(list)
+	if n == 0 {
+		return "", ErrNoEndpoint
+	}
+	return list[rand.Intn(n)].endpoint, nil
 }
 
 func (b *BalancerClient) DWRR(service string) (string, error) {
-	return "", nil
+	b.l.RLock()
+	defer b.l.RUnlock()
+	list := b.list[service]
+	n := len(list)
+	if n == 0 {
+		return "", ErrNoEndpoint
+	}
+	return list[rand.Intn(n)].endpoint, nil
 }
 
 func listServiceInfo(serviceName, port string) (services []*v1.ServiceInfo, upstream []*v1.ServiceInfo, err error) {

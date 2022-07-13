@@ -3,7 +3,7 @@ server:
     addr: 0.0.0.0:9091
     timeout: 1s
   prometheus:
-    port: 8082
+    port: 8081
 data:
   database:
     driver: mysql

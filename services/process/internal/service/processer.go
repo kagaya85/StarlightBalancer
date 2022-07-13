@@ -22,7 +22,7 @@ func NewProcessService(uc *biz.ProcesserUsecase) *ProcessService {
 	return &ProcessService{uc: uc}
 }
 
-func (s *ProcessService) Upload(ctx context.Context, req *pb.ProcessRequest) (*pb.ProcessResponse, error) {
+func (s *ProcessService) Process(ctx context.Context, req *pb.ProcessRequest) (*pb.ProcessResponse, error) {
 	s.uc.Call(ctx, GlobalBalancer.Random)
 	return &pb.ProcessResponse{Result: "ok"}, nil
 }

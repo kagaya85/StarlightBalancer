@@ -41,7 +41,7 @@ func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpd
 		Service: svcInfo.Service,
 		Port:    svcInfo.Port,
 		Pod:     in.Pod,
-		PodIP:   in.PodIP,
+		IP:      in.PodIP,
 		Node:    in.Node,
 		Zone:    in.Zone,
 	}
@@ -72,12 +72,12 @@ func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpd
 	for {
 		weightsList := s.updater.UpdateWeights(context.Background(), biz.Instance(in.Instance))
 		wl := map[string]*v1.Weight{}
-		for op, insWeights := range weightsList {
+		for svc, insWeights := range weightsList {
 			iw := map[string]int32{}
 			for endpoint, weight := range insWeights {
 				iw[string(endpoint)] = int32(weight)
 			}
-			wl[string(op)] = &v1.Weight{InstanceWeight: iw}
+			wl[svc] = &v1.Weight{InstanceWeight: iw}
 		}
 		if err := stream.Send(&v1.UpdateReply{WeightList: wl}); err != nil {
 			log.Infof("update stream error: %v", err)

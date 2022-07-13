@@ -68,12 +68,27 @@ func (l *weightList) Update(op Operation, new []weight) {
 	}
 }
 
+func (l *weightList) RemoveInstance(id Instance, op Operation) {
+	l.Lock()
+	defer l.Unlock()
+	if weights, has := l.weights[op]; has {
+		for i, w := range weights {
+			if w.ins == id {
+				weights = append(weights[:i], weights[i+1:]...)
+				l.weights[op] = weights
+				l.total[op] -= w.value
+				return
+			}
+		}
+	}
+}
+
 type InstanceInfo struct {
 	ID      string
+	IP      string
 	Service string
 	Port    string
 	Pod     string
-	PodIP   string
 	Node    string
 	Zone    string
 }
@@ -223,7 +238,8 @@ func NewWeightUpdater(logger log.Logger, traceSource TraceSource, metricSource M
 	}
 }
 
-func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Operation]map[Endpoint]int {
+// UpdateWeights returns the updated Endpoint weights of the each Service.
+func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[string]map[Endpoint]int {
 	// get upstream service
 	insInfo := u.insInfos[id]
 	upops := u.svcInfos[insInfo.Service].UpstreamOperations
@@ -247,15 +263,20 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[Oper
 		u.log.Debugf("update %s upstream weights %s: %v", id, upop, new)
 	}
 
-	results := make(map[Operation]map[Endpoint]int, len(upops))
+	results := make(map[string]map[Endpoint]int, len(upops))
 
 	for _, upop := range upops {
 		ws := weightList.WeightsOf(upop)
 		opresult := make(map[Endpoint]int, len(ws))
 		for _, w := range ws {
-			opresult[Endpoint(u.insInfos[w.ins].PodIP+":"+insInfo.Port)] = w.value
+			if insInfo, has := u.insInfos[w.ins]; has {
+				opresult[Endpoint(insInfo.IP+":"+insInfo.Port)] = w.value
+			} else {
+				// 该实例信息已经被删除，从权重list中删除
+				weightList.RemoveInstance(w.ins, upop)
+			}
 		}
-		results[upop] = opresult
+		results[upop.ServiceName()] = opresult
 	}
 	return results
 }
@@ -264,7 +285,7 @@ func (u *WeightUpdater) updateWeights(ctx context.Context, insInfo InstanceInfo,
 	initWeight := 100
 	svcInfo, has := u.svcInfos[upstreamService]
 	if !has {
-		log.Errorf("upstream service %s infomation not found", upstreamService)
+		log.Debugf("upstream service %s infomation not found", upstreamService)
 		return nil
 	}
 	insNum := len(svcInfo.Instances)
@@ -431,10 +452,11 @@ func (u *WeightUpdater) RemoveInstance(target Instance) {
 		}
 		if len(info.Instances) <= 0 {
 			delete(u.svcInfos, service)
-			u.log.Infow("no alived instance, remove service", service)
+			u.log.Infow("no avaliable instance, remove service", service)
 		}
 	}
 	delete(u.insInfos, target)
+	delete(u.insWeights, target)
 	u.log.Infof("instance %s removed", target)
 	u.mu.Unlock()
 	u.insMetrics.Clear(target)
