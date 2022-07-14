@@ -1,6 +1,6 @@
 FROM golang:1.18 AS builder
 
-COPY ../.. /src
+COPY . /src
 WORKDIR /src/services/upload
 
 RUN GOPROXY=https://goproxy.cn make build
@@ -19,7 +19,8 @@ COPY --from=builder /src/bin /app
 
 WORKDIR /app
 
+EXPOSE 8081
 EXPOSE 9091
 VOLUME /data/conf
 
-CMD ["./server", "-conf", "/data/conf"]
+CMD ["./upload", "-conf", "/data/conf"]

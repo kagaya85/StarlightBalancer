@@ -32,6 +32,7 @@ message Data {
   }
   message Prometheus {
     string address = 1;
+    google.protobuf.Duration timeout = 2;
   }
   Database database = 1;
   Skywalking skywalking = 2;

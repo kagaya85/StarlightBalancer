@@ -2,6 +2,8 @@ GOPATH:=$(shell go env GOPATH)
 VERSION=$(shell git describe --tags --always)
 INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
 API_PROTO_FILES=$(shell find api -name *.proto)
+IMAGE_REPO=kagaya85
+TAG=${VERSION}
 
 .PHONY: init
 # init env
@@ -49,6 +51,21 @@ all:
 	make api;
 	make config;
 	make generate;
+
+.PHONY: build-image
+# build image
+build-image:
+	bash hack/build-image.sh $(IMAGE_REPO) $(TAG)
+
+.PHONY: push-image
+# push image
+push-image:
+	bash hack/push-image.sh $(IMAGE_REPO)
+
+.PHONY: clean-image
+# clean image
+clean-image:
+	bash hack/clean-image.sh $(IMAGE_REPO)
 
 # show help
 help:
