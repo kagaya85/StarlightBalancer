@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: upload
-          image: kagaya85/upload:latest
+          image: kagaya85/starlight-upload:latest
           resources:
             limits:
               memory: "128Mi"
@@ -43,6 +43,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['zone']
+          volumeMounts:
+            - name: upload-config
+              mountPath: /data/conf
+      volumes:
+        - name: upload-config
+          configMap:
+            name: upload-config
 
 ---
 apiVersion: apps/v1
@@ -62,7 +69,7 @@ spec:
     spec:
       containers:
         - name: process
-          image: kagaya85/process:latest
+          image: kagaya85/starlight-process:latest
           resources:
             limits:
               memory: "128Mi"
@@ -90,6 +97,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['zone']
+          volumeMounts:
+            - name: process-config
+              mountPath: /data/conf
+      volumes:
+        - name: process-config
+          configMap:
+            name: process-config
 
 ---
 apiVersion: apps/v1
@@ -109,7 +123,7 @@ spec:
     spec:
       containers:
         - name: push
-          image: kagaya85/push:latest
+          image: kagaya85/starlight-push:latest
           resources:
             limits:
               memory: "128Mi"
@@ -137,6 +151,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['zone']
+          volumeMounts:
+            - name: push-config
+              mountPath: /data/conf
+      volumes:
+        - name: push-config
+          configMap:
+            name: push-config
 
 ---
 apiVersion: apps/v1
@@ -156,7 +177,7 @@ spec:
     spec:
       containers:
         - name: audit
-          image: kagaya85/audit:latest
+          image: kagaya85/starlight-audit:latest
           resources:
             limits:
               memory: "128Mi"
@@ -184,6 +205,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['zone']
+          volumeMounts:
+            - name: audit-config
+              mountPath: /data/conf
+      volumes:
+        - name: audit-config
+          configMap:
+            name: audit-config
 
 ---
 apiVersion: apps/v1
@@ -203,7 +231,7 @@ spec:
     spec:
       containers:
         - name: transcode
-          image: kagaya85/transcode:latest
+          image: kagaya85/starlight-transcode:latest
           resources:
             limits:
               memory: "128Mi"
@@ -231,6 +259,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['zone']
+          volumeMounts:
+            - name: transcode-config
+              mountPath: /data/conf
+      volumes:
+        - name: transcode-config
+          configMap:
+            name: transcode-config
 
 ---
 apiVersion: apps/v1
@@ -250,7 +285,7 @@ spec:
     spec:
       containers:
         - name: storage
-          image: kagaya85/storage:latest
+          image: kagaya85/starlight-storage:latest
           resources:
             limits:
               memory: "128Mi"
@@ -278,6 +313,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['zone']
+          volumeMounts:
+            - name: storage-config
+              mountPath: /data/conf
+      volumes:
+        - name: storage-config
+          configMap:
+            name: storage-config
 
 ---
 apiVersion: apps/v1
@@ -297,7 +339,7 @@ spec:
     spec:
       containers:
         - name: timeline
-          image: kagaya85/timeline:latest
+          image: kagaya85/starlight-timeline:latest
           resources:
             limits:
               memory: "128Mi"
@@ -325,6 +367,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['zone']
+          volumeMounts:
+            - name: timeline-config
+              mountPath: /data/conf
+      volumes:
+        - name: timeline-config
+          configMap:
+            name: timeline-config
 
 ---
 apiVersion: apps/v1
@@ -344,7 +393,7 @@ spec:
     spec:
       containers:
         - name: distribution
-          image: kagaya85/distribution:latest
+          image: kagaya85/starlight-distribution:latest
           resources:
             limits:
               memory: "128Mi"
@@ -372,6 +421,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['zone']
-
----
-
+          volumeMounts:
+            - name: distribution-config
+              mountPath: /data/conf
+      volumes:
+        - name: distribution-config
+          configMap:
+            name: distribution-config

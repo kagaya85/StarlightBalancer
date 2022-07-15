@@ -3,7 +3,7 @@ VERSION=$(shell git describe --tags --always)
 INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
 API_PROTO_FILES=$(shell find api -name *.proto)
 IMAGE_REPO=kagaya85
-TAG=${VERSION}
+TAG=lastest
 
 .PHONY: init
 # init env
