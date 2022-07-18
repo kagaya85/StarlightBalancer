@@ -23,4 +23,4 @@ EXPOSE 8081
 EXPOSE 9091
 VOLUME /data/conf
 
-CMD ["./upload", "-conf", "/data/conf"]
+CMD ["./server", "-conf", "/data/conf"]

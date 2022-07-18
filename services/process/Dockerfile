@@ -23,4 +23,4 @@ EXPOSE 8082
 EXPOSE 9092
 VOLUME /data/conf
 
-CMD ["./process", "-conf", "/data/conf"]
+CMD ["./server", "-conf", "/data/conf"]
