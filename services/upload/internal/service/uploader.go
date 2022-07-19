@@ -23,6 +23,7 @@ func NewUploaderService(uc *biz.UploaderUsecase) *UploadService {
 }
 
 func (s *UploadService) Upload(ctx context.Context, req *pb.UploadRequest) (*pb.UploadResponse, error) {
-	s.uc.Call(ctx, GlobalBalancer.Default)
-	return &pb.UploadResponse{}, nil
+	s.uc.CallProcesss(ctx, GlobalBalancer.Default)
+	s.uc.CallPush(ctx, GlobalBalancer.Default)
+	return &pb.UploadResponse{Result: "hello"}, nil
 }

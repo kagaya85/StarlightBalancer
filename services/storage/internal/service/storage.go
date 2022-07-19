@@ -22,7 +22,7 @@ func NewStorageService(uc *biz.StorageUsecase) *StorageService {
 	return &StorageService{uc: uc}
 }
 
-func (s *StorageService) Storage(ctx context.Context, req *pb.SaveRequest) (*pb.SaveResponse, error) {
+func (s *StorageService) Save(ctx context.Context, req *pb.SaveRequest) (*pb.SaveResponse, error) {
 	s.uc.Call(ctx, GlobalBalancer.Default)
 	return &pb.SaveResponse{Result: "saved"}, nil
 }

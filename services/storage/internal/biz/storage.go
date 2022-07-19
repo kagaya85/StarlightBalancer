@@ -57,6 +57,6 @@ func (uc *StorageUsecase) Call(ctx context.Context, selector client.Selector) er
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("[grpc] Process reply %+v\n", reply)
+	log.Infof("[grpc] distribution service reply %+v\n", reply)
 	return nil
 }

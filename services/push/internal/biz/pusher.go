@@ -57,6 +57,6 @@ func (uc *PusherUsecase) Call(ctx context.Context, selector client.Selector) err
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("[grpc] Process reply %+v\n", reply)
+	log.Infof("[grpc] timeline service reply %+v\n", reply)
 	return nil
 }

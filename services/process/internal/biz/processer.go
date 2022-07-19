@@ -3,7 +3,9 @@ package biz
 import (
 	"context"
 
-	v1 "starlight/api/services/audit/v1"
+	audit "starlight/api/services/audit/v1"
+	storage "starlight/api/services/storage/v1"
+	transcode "starlight/api/services/transcode/v1"
 	"starlight/balancer/client"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -36,7 +38,7 @@ func NewProcesserUsecase(repo ProcesserRepo, logger log.Logger) *ProcesserUsecas
 	return &ProcesserUsecase{repo: repo, log: log.NewHelper(logger)}
 }
 
-func (uc *ProcesserUsecase) Call(ctx context.Context, selector client.Selector) string {
+func (uc *ProcesserUsecase) CallAudit(ctx context.Context, selector client.Selector) string {
 	ep, err := selector("AuditService")
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
@@ -53,8 +55,60 @@ func (uc *ProcesserUsecase) Call(ctx context.Context, selector client.Selector) 
 		panic(err)
 	}
 	defer conn.Close()
-	client := v1.NewAuditServiceClient(conn)
-	reply, err := client.Audit(ctx, &v1.AuditRequest{Id: "2233"})
+	client := audit.NewAuditServiceClient(conn)
+	reply, err := client.Audit(ctx, &audit.AuditRequest{Id: "2233"})
+	if err != nil {
+		log.Error(err)
+	}
+	log.Infof("[grpc] audit service reply %+v\n", reply)
+	return reply.GetResult()
+}
+
+func (uc *ProcesserUsecase) CallTranscode(ctx context.Context, selector client.Selector) string {
+	ep, err := selector("TranscodeService")
+	if err != nil {
+		log.Errorf("selector error %+v\n", err)
+		return ""
+	}
+	conn, err := grpc.DialInsecure(
+		context.Background(),
+		grpc.WithEndpoint(ep),
+		grpc.WithMiddleware(
+			recovery.Recovery(),
+		),
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	client := transcode.NewTranscodeServiceClient(conn)
+	reply, err := client.Transcode(ctx, &transcode.TranscodeRequest{Source: "www.kagaya.com/foo/bar.mp4"})
+	if err != nil {
+		log.Error(err)
+	}
+	log.Infof("[grpc] transcode service reply %+v\n", reply)
+	return reply.GetTarget()
+}
+
+func (uc *ProcesserUsecase) CallStorage(ctx context.Context, selector client.Selector) string {
+	ep, err := selector("StorageService")
+	if err != nil {
+		log.Errorf("selector error %+v\n", err)
+		return ""
+	}
+	conn, err := grpc.DialInsecure(
+		context.Background(),
+		grpc.WithEndpoint(ep),
+		grpc.WithMiddleware(
+			recovery.Recovery(),
+		),
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	client := storage.NewStorageServiceClient(conn)
+	reply, err := client.Save(ctx, &storage.SaveRequest{Name: "kagaya", Data: "foobar"})
 	if err != nil {
 		log.Error(err)
 	}

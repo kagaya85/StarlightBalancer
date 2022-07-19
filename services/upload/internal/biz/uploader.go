@@ -3,7 +3,8 @@ package biz
 import (
 	"context"
 
-	v1 "starlight/api/services/process/v1"
+	process "starlight/api/services/process/v1"
+	push "starlight/api/services/push/v1"
 	"starlight/balancer/client"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -36,7 +37,7 @@ func NewUploaderUsecase(repo UploaderRepo, logger log.Logger) *UploaderUsecase {
 	return &UploaderUsecase{repo: repo, log: log.NewHelper(logger)}
 }
 
-func (uc *UploaderUsecase) Call(ctx context.Context, selector client.Selector) error {
+func (uc *UploaderUsecase) CallProcesss(ctx context.Context, selector client.Selector) error {
 	ep, err := selector("ProcessService")
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
@@ -52,11 +53,36 @@ func (uc *UploaderUsecase) Call(ctx context.Context, selector client.Selector) e
 		panic(err)
 	}
 	defer conn.Close()
-	client := v1.NewProcessServiceClient(conn)
-	reply, err := client.Process(ctx, &v1.ProcessRequest{Id: "2233"})
+	client := process.NewProcessServiceClient(conn)
+	reply, err := client.Process(ctx, &process.ProcessRequest{Id: "2233"})
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("[grpc] Process reply %+v\n", reply)
+	log.Infof("[grpc] process service reply %+v\n", reply)
+	return nil
+}
+
+func (uc *UploaderUsecase) CallPush(ctx context.Context, selector client.Selector) error {
+	ep, err := selector("PushService")
+	if err != nil {
+		log.Errorf("selector error %+v\n", err)
+	}
+	conn, err := grpc.DialInsecure(
+		context.Background(),
+		grpc.WithEndpoint(ep),
+		grpc.WithMiddleware(
+			recovery.Recovery(),
+		),
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	client := push.NewPushServiceClient(conn)
+	reply, err := client.PushVideo(ctx, &push.PushRequest{Id: "2233"})
+	if err != nil {
+		log.Error(err)
+	}
+	log.Infof("[grpc] push service reply %+v\n", reply)
 	return nil
 }

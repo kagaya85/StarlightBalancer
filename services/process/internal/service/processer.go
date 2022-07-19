@@ -23,6 +23,8 @@ func NewProcessService(uc *biz.ProcesserUsecase) *ProcessService {
 }
 
 func (s *ProcessService) Process(ctx context.Context, req *pb.ProcessRequest) (*pb.ProcessResponse, error) {
-	s.uc.Call(ctx, GlobalBalancer.Default)
+	s.uc.CallAudit(ctx, GlobalBalancer.Default)
+	s.uc.CallTranscode(ctx, GlobalBalancer.Default)
+	s.uc.CallStorage(ctx, GlobalBalancer.Default)
 	return &pb.ProcessResponse{Result: "ok"}, nil
 }
