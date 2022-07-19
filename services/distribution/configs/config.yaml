@@ -1,9 +1,9 @@
 server:
   grpc:
-    addr: 0.0.0.0:9094
+    addr: 0.0.0.0:9098
     timeout: 1s
   prometheus:
-    port: 8084
+    port: 8088
 data:
   database:
     driver: mysql

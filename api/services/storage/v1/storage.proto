@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package save.v1;
+package storage.v1;
 
-option go_package = "api/services/save/v1;v1";
+option go_package = "api/services/storage/v1;v1";
 
-service SaveService {
+service StorageService {
 	rpc Save(SaveRequest) returns (SaveResponse) {}
 }
 
