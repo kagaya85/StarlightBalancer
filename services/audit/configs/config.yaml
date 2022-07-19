@@ -1,0 +1,13 @@
+server:
+  grpc:
+    addr: 0.0.0.0:9091
+    timeout: 1s
+  prometheus:
+    port: 8081
+data:
+  database:
+    driver: mysql
+    source: root:root@tcp(127.0.0.1:3306)/test
+balancer:
+  addr: 127.0.0.1:9000
+  maxRetry: 3
