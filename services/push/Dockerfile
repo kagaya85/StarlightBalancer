@@ -1,7 +1,7 @@
 FROM golang:1.18 AS builder
 
 COPY . /src
-WORKDIR /src/services/process
+WORKDIR /src/services/push
 
 RUN GOPROXY=https://goproxy.cn make build
 
@@ -15,12 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/ \
     && apt-get autoremove -y && apt-get autoclean -y
 
-COPY --from=builder /src/services/process/bin /app
+COPY --from=builder /src/bin /app
 
 WORKDIR /app
 
-EXPOSE 8082
-EXPOSE 9092
+EXPOSE 8083
+EXPOSE 9093
 VOLUME /data/conf
 
-CMD ["./process", "-conf", "/data/conf"]
+CMD ["./push", "-conf", "/data/conf"]

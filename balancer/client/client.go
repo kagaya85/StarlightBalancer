@@ -128,6 +128,10 @@ func (b *BalancerClient) sync(stream v1.WeightUpdater_UpdateClient) error {
 	return nil
 }
 
+func (b *BalancerClient) Default(service string) (string, error) {
+	return b.Random(service)
+}
+
 func (b *BalancerClient) Random(service string) (string, error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
