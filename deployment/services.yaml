@@ -12,6 +12,11 @@ spec:
       labels:
         app: upload
         zone: cn-shanghai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/scheme: "http"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: upload
@@ -21,7 +26,12 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 9091
+            - name: grpc
+              containerPort: 9091
+              protocol: TCP
+            - name: metrics
+              containerPort: 8081
+              protocol: TCP
           env:
             - name: POD_NAME
               valueFrom:
@@ -66,6 +76,11 @@ spec:
       labels:
         app: process
         zone: cn-shanghai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8082"
+        prometheus.io/scheme: "http"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: process
@@ -75,7 +90,12 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 9092
+            - name: grpc
+              containerPort: 9092
+              protocol: TCP
+            - name: metrics
+              containerPort: 8082
+              protocol: TCP
           env:
             - name: POD_NAME
               valueFrom:
@@ -120,6 +140,11 @@ spec:
       labels:
         app: push
         zone: cn-shanghai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8083"
+        prometheus.io/scheme: "http"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: push
@@ -129,7 +154,12 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 9093
+            - name: grpc
+              containerPort: 9093
+              protocol: TCP
+            - name: metrics
+              containerPort: 8083
+              protocol: TCP
           env:
             - name: POD_NAME
               valueFrom:
@@ -174,6 +204,11 @@ spec:
       labels:
         app: audit
         zone: cn-shanghai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8084"
+        prometheus.io/scheme: "http"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: audit
@@ -183,7 +218,12 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 9094
+            - name: grpc
+              containerPort: 9094
+              protocol: TCP
+            - name: metrics
+              containerPort: 8084
+              protocol: TCP
           env:
             - name: POD_NAME
               valueFrom:
@@ -228,6 +268,11 @@ spec:
       labels:
         app: transcode
         zone: cn-shanghai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8085"
+        prometheus.io/scheme: "http"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: transcode
@@ -237,7 +282,12 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 9095
+            - name: grpc
+              containerPort: 9095
+              protocol: TCP
+            - name: metrics
+              containerPort: 8085
+              protocol: TCP
           env:
             - name: POD_NAME
               valueFrom:
@@ -282,6 +332,11 @@ spec:
       labels:
         app: storage
         zone: cn-shanghai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8086"
+        prometheus.io/scheme: "http"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: storage
@@ -291,7 +346,12 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 9096
+            - name: grpc
+              containerPort: 9096
+              protocol: TCP
+            - name: metrics
+              containerPort: 8086
+              protocol: TCP
           env:
             - name: POD_NAME
               valueFrom:
@@ -336,6 +396,11 @@ spec:
       labels:
         app: timeline
         zone: cn-shanghai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8087"
+        prometheus.io/scheme: "http"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: timeline
@@ -345,7 +410,12 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 9097
+            - name: grpc
+              containerPort: 9097
+              protocol: TCP
+            - name: metrics
+              containerPort: 8087
+              protocol: TCP
           env:
             - name: POD_NAME
               valueFrom:
@@ -390,6 +460,11 @@ spec:
       labels:
         app: distribution
         zone: cn-shanghai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8088"
+        prometheus.io/scheme: "http"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: distribution
@@ -399,7 +474,12 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 9098
+            - name: grpc
+              containerPort: 9098
+              protocol: TCP
+            - name: metrics
+              containerPort: 8088
+              protocol: TCP
           env:
             - name: POD_NAME
               valueFrom:

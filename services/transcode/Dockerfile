@@ -1,7 +1,7 @@
 FROM golang:1.18 AS builder
 
 COPY . /src
-WORKDIR /src/services/upload
+WORKDIR /src/services/transcode
 
 RUN GOPROXY=https://goproxy.cn make build
 
