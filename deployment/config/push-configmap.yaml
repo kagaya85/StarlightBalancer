@@ -3,10 +3,10 @@ data:
   config.yaml: |
     server:
       grpc:
-        addr: 0.0.0.0:9091
+        addr: 0.0.0.0:9093
         timeout: 1s
       prometheus:
-        port: 8081
+        port: 8083
     data:
       database:
         driver: mysql
@@ -17,4 +17,4 @@ data:
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: upload-config
+  name: push-config
