@@ -12,15 +12,89 @@ spec:
       labels:
         app: prometheus
     spec:
+      serviceAccountName: prometheus
+      serviceAccount: prometheus
       containers:
         - name: prometheus
           image: prom/prometheus:v2.16.0
+          command:
+            - /bin/prometheus
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
           resources:
             limits:
               memory: "128Mi"
               cpu: "500m"
           ports:
             - containerPort: 9090
+          volumeMounts:
+            - mountPath: /etc/prometheus
+              name: prometheus-config
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+
+---
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+  spec:
+    ports:
+      - port: 9090
+        targetPort: 9090
+        protocol: TCP
+        name: prometheus
+    selector:
+      app: prometheus
+    type: NodePort
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: monitoring
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoring
 
 ---
 apiVersion: apps/v1
@@ -52,6 +126,7 @@ spec:
             - --collector.netclass.ignored-devices=^(veth.*)$
           name: node-exporter
           image: prom/node-exporter
+          imagePullpolicy: IfNotPresent
           ports:
             - containerPort: 9100
               protocol: TCP
@@ -60,7 +135,7 @@ spec:
               cpu: 250m
               memory: 180Mi
             requests:
-              cpu: 102m
+              cpu: 100m
               memory: 180Mi
           volumeMounts:
             - mountPath: /host/sys

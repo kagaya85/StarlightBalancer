@@ -27,3 +27,17 @@ spec:
         - name: balancer-config
           configMap:
             name: balancer-config
+
+---
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: balancer
+  labels:
+    app: balancer
+  spec:
+    ports:
+      - port: 9000
+        targetPort: 9000
+        protocol: TCP
+        name: balancer
