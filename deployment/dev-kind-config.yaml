@@ -29,6 +29,9 @@ nodes:
       - containerPort: 30080
         hostPort: 30080
         listenAddress: "0.0.0.0"
+      - containerPort: 30081
+        hostPort: 30081
+        listenAddress: "0.0.0.0"
   - role: worker
   - role: worker
   - role: worker

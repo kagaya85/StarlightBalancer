@@ -13,7 +13,8 @@ data:
         static_configs:
         - targets: ['localhost:9090']
         
-      - job_name: 'kubernetes-nodes'
+      - job_name: 'kubernetes-kubelet'
+        scheme: https
         tls_config:
           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
           insecure_skip_verify: true
@@ -23,6 +24,20 @@ data:
         relabel_configs:
         - action: labelmap
           regex: __meta_kubernetes_node_label_(.+)
+        - target_label: __address__
+          replacement: kubernetes.default.svc:443
+        - source_labels: [__meta_kubernetes_node_name]
+          regex: (.+)
+          target_label: __metrics_path__
+          replacement: /api/v1/nodes/${1}/proxy/metrics
+
+      - job_name: 'kubernetes-node-exporter'
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_endpoints_name]
+          regex: 'node-exporter'
+          action: keep
 
       - job_name: 'kubernetes-pods'
         tls_config:
