@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: prometheus
+      serviceAccount: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.16.0
+          command:
+            - /bin/prometheus
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - mountPath: /etc/prometheus
+              name: prometheus-config
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  ports:
+    - port: 9090
+      targetPort: 9090
+      nodePort: 30080
+      protocol: TCP
+      name: prometheus
+  selector:
+    app: prometheus
+  type: NodePort
