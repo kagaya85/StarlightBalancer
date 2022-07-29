@@ -30,6 +30,9 @@ type BalancerClient struct {
 	l    sync.RWMutex
 	list map[string][]Weight // key: service, value: weight list
 
+	rrmu  sync.Mutex
+	rridx map[string]int // key: service, value: round robin index
+
 	serverAddr  string
 	maxRetry    int
 	serviceName string
@@ -175,6 +178,17 @@ func (b *BalancerClient) WRandom(service string) (string, error) {
 	if n == 0 {
 		return "", ErrNoEndpoint
 	}
+	total := 0
+	for _, w := range list {
+		total += w.weight
+	}
+	r := rand.Intn(total)
+	for _, w := range list {
+		if r < w.weight {
+			return w.endpoint, nil
+		}
+		r -= w.weight
+	}
 	return list[rand.Intn(n)].endpoint, nil
 }
 
@@ -186,6 +200,17 @@ func (b *BalancerClient) DWRandom(service string) (string, error) {
 	n := len(list)
 	if n == 0 {
 		return "", ErrNoEndpoint
+	}
+	total := 0
+	for _, w := range list {
+		total += w.weight
+	}
+	r := rand.Intn(total)
+	for _, w := range list {
+		if r < w.weight {
+			return w.endpoint, nil
+		}
+		r -= w.weight
 	}
 	return list[rand.Intn(n)].endpoint, nil
 }
@@ -199,7 +224,12 @@ func (b *BalancerClient) RR(service string) (string, error) {
 	if n == 0 {
 		return "", ErrNoEndpoint
 	}
-	return list[rand.Intn(n)].endpoint, nil
+
+	b.rrmu.Lock()
+	idx := b.rridx[service]
+	b.rridx[service] = (idx + 1) % n
+	b.rrmu.Unlock()
+	return list[idx].endpoint, nil
 }
 
 // WRR is a weighted round robin balancer.
@@ -210,6 +240,22 @@ func (b *BalancerClient) WRR(service string) (string, error) {
 	n := len(list)
 	if n == 0 {
 		return "", ErrNoEndpoint
+	}
+
+	total := 0
+	for _, w := range list {
+		total += w.weight
+	}
+
+	b.rrmu.Lock()
+	idx := b.rridx[service]
+	b.rridx[service] = (idx + 1) % total
+	b.rrmu.Unlock()
+	for _, w := range list {
+		if idx < w.weight {
+			return w.endpoint, nil
+		}
+		idx -= w.weight
 	}
 	return list[rand.Intn(n)].endpoint, nil
 }
@@ -222,6 +268,22 @@ func (b *BalancerClient) DWRR(service string) (string, error) {
 	n := len(list)
 	if n == 0 {
 		return "", ErrNoEndpoint
+	}
+
+	total := 0
+	for _, w := range list {
+		total += w.weight
+	}
+
+	b.rrmu.Lock()
+	idx := b.rridx[service]
+	b.rridx[service] = (idx + 1) % total
+	b.rrmu.Unlock()
+	for _, w := range list {
+		if idx < w.weight {
+			return w.endpoint, nil
+		}
+		idx -= w.weight
 	}
 	return list[rand.Intn(n)].endpoint, nil
 }
