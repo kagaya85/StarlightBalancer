@@ -85,7 +85,13 @@ func main() {
 	}
 	defer cleanup()
 
-	service.GlobalBalancer = client.NewBalancerClient(bc.Balancer.Addr, int(bc.Balancer.MaxRetry), Name, strings.Split(bc.Server.Grpc.Addr, ":")[1], logger)
+	service.GlobalBalancer = client.NewBalancerClient(bc.Balancer.Addr, int(bc.Balancer.MaxRetry), Name, strings.Split(bc.Server.Grpc.Addr, ":")[1], bc.Balancer.Method, logger)
+
+	if err := c.Watch("balancer.method", func(key string, value config.Value) {
+		service.GlobalBalancer.SetMethod(value.Load().(string))
+	}); err != nil {
+		panic(err)
+	}
 
 	go func() {
 		if err := service.GlobalBalancer.Sync(context.TODO(), id); err != nil {

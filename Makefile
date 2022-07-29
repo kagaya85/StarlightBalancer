@@ -3,7 +3,7 @@ VERSION=$(shell git describe --tags --always)
 INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
 API_PROTO_FILES=$(shell find api -name *.proto)
 IMAGE_REPO=kagaya85
-TAG=lastest
+TAG=latest
 
 .PHONY: init
 # init env
@@ -66,6 +66,11 @@ push-image:
 # clean image
 clean-image:
 	bash hack/clean-image.sh $(IMAGE_REPO)
+
+.PHONY: load-image
+# load image
+load-image:
+	bash hack/load-image.sh $(IMAGE_REPO)
 
 # show help
 help:

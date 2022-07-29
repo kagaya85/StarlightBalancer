@@ -34,16 +34,18 @@ type BalancerClient struct {
 	maxRetry    int
 	serviceName string
 	port        string
+	method      string
 
 	log log.Helper
 }
 
-func NewBalancerClient(serverAddr string, maxRetry int, serviceName string, port string, logger log.Logger) *BalancerClient {
+func NewBalancerClient(serverAddr string, maxRetry int, serviceName string, port string, method string, logger log.Logger) *BalancerClient {
 	return &BalancerClient{
 		serverAddr:  serverAddr,
 		maxRetry:    maxRetry,
 		serviceName: serviceName,
 		port:        port,
+		method:      method,
 		log:         *log.NewHelper(logger),
 	}
 }
@@ -128,10 +130,31 @@ func (b *BalancerClient) sync(stream v1.WeightUpdater_UpdateClient) error {
 	return nil
 }
 
-func (b *BalancerClient) Default(service string) (string, error) {
-	return b.Random(service)
+func (b *BalancerClient) SetMethod(m string) {
+	b.method = m
+	b.log.Infof("set lb method to %s", m)
 }
 
+func (b *BalancerClient) Default(service string) (string, error) {
+	switch b.method {
+	case "random":
+		return b.Random(service)
+	case "wrandom":
+		return b.WRandom(service)
+	case "dwrandom":
+		return b.DWRandom(service)
+	case "rr":
+		return b.RR(service)
+	case "wrr":
+		return b.WRR(service)
+	case "dwrr":
+		return b.DWRR(service)
+	default:
+		return "", errors.New("no lb method")
+	}
+}
+
+// Random is a random balancer.
 func (b *BalancerClient) Random(service string) (string, error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
@@ -143,6 +166,7 @@ func (b *BalancerClient) Random(service string) (string, error) {
 	return list[rand.Intn(n)].endpoint, nil
 }
 
+// WRandom is a weighted random balancer.
 func (b *BalancerClient) WRandom(service string) (string, error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
@@ -154,6 +178,7 @@ func (b *BalancerClient) WRandom(service string) (string, error) {
 	return list[rand.Intn(n)].endpoint, nil
 }
 
+// DWRandom is a dynamic weighted random balancer.
 func (b *BalancerClient) DWRandom(service string) (string, error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
@@ -165,6 +190,7 @@ func (b *BalancerClient) DWRandom(service string) (string, error) {
 	return list[rand.Intn(n)].endpoint, nil
 }
 
+// RR is a round robin balancer.
 func (b *BalancerClient) RR(service string) (string, error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
@@ -176,6 +202,7 @@ func (b *BalancerClient) RR(service string) (string, error) {
 	return list[rand.Intn(n)].endpoint, nil
 }
 
+// WRR is a weighted round robin balancer.
 func (b *BalancerClient) WRR(service string) (string, error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
@@ -187,6 +214,7 @@ func (b *BalancerClient) WRR(service string) (string, error) {
 	return list[rand.Intn(n)].endpoint, nil
 }
 
+// DRR is a dynamic weighted round robin balancer.
 func (b *BalancerClient) DWRR(service string) (string, error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
