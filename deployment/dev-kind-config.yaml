@@ -26,14 +26,15 @@ nodes:
   - role: control-plane
   - role: worker
     extraPortMappings:
+      - containerPort: 9091
+        hostPort: 9091
+        listenAddress: "0.0.0.0"
       - containerPort: 30080
         hostPort: 30080
         listenAddress: "0.0.0.0"
-        name: prometheus
       - containerPort: 30081
         hostPort: 30081
         listenAddress: "0.0.0.0"
-        name: grafana
   - role: worker
   - role: worker
   - role: worker

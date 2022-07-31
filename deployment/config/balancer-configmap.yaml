@@ -10,11 +10,11 @@ data:
         driver: mysql
         source: root:root@tcp(127.0.0.1:3306)/test
       skywalking:
-        address: http://localhost:11800
+        address: http://skywalking.tracing.svc:11800
         username: admin
         password: admin
       prometheus:
-        addr: http://localhost:9090
+        addr: http://prometheus.monitoring.svc:9090
         timeout: 1s
     updater:
       updateInterval: 5s

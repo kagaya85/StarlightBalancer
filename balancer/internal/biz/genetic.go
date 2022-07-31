@@ -78,11 +78,17 @@ func (ga *geneticAlgorithm) calcFitness(target []byte) int {
 	for _, w := range target {
 		totalWeight += int(w)
 	}
+	if totalWeight == 0 {
+		return -1
+	}
 	// TODO 优化计算方法
 	for i, w := range target {
 		status := ga.insStatus[i]
 		up := (int(w) << 10 / totalWeight) * (50*btoi(status.IsSameNode) + 100*btoi(status.IsSameZone) + int(status.Metric.SuccessRate*100))
 		down := status.LinkLoad + status.Metric.Load + status.Metric.ResponseTime + int(status.Metric.CPU*100+status.Metric.Mem*100+math.Sqrt(float64(status.Metric.ConnectionCount)))
+		if down == 0 {
+			down = 1
+		}
 		fitness += up << 10 / down
 	}
 	return fitness

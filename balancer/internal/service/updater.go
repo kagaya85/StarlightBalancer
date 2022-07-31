@@ -68,7 +68,7 @@ func (s *WeightUpdaterService) Update(in *v1.UpdateRequeset, stream v1.WeightUpd
 
 	// 设置定时更新权重列表
 	ticker := time.NewTicker(s.updateInterval)
-	log.Infow("start update loop, service=%s, interval=%d(s)", svcInfo.Service, s.updateInterval/time.Second)
+	log.Infof("start update loop, service=%s, interval=%d(s)", svcInfo.Service, s.updateInterval/time.Second)
 	for {
 		weightsList := s.updater.UpdateWeights(context.Background(), biz.Instance(in.Instance))
 		wl := map[string]*v1.Weight{}

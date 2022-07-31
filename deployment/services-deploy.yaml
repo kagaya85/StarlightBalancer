@@ -21,6 +21,7 @@ spec:
       containers:
         - name: upload
           image: kagaya85/starlight-upload:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "128Mi"
@@ -62,6 +63,23 @@ spec:
             name: upload-config
 
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: upload
+  labels:
+    app: upload
+spec:
+  ports:
+    - port: 9091
+      targetPort: 9091
+      protocol: TCP
+      name: grpc
+  selector:
+    app: upload
+  type: NodePort
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -85,6 +103,7 @@ spec:
       containers:
         - name: process
           image: kagaya85/starlight-process:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "128Mi"
@@ -149,6 +168,7 @@ spec:
       containers:
         - name: push
           image: kagaya85/starlight-push:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "128Mi"
@@ -213,6 +233,7 @@ spec:
       containers:
         - name: audit
           image: kagaya85/starlight-audit:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "128Mi"
@@ -277,6 +298,7 @@ spec:
       containers:
         - name: transcode
           image: kagaya85/starlight-transcode:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "128Mi"
@@ -341,6 +363,7 @@ spec:
       containers:
         - name: storage
           image: kagaya85/starlight-storage:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "128Mi"
@@ -405,6 +428,7 @@ spec:
       containers:
         - name: timeline
           image: kagaya85/starlight-timeline:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "128Mi"
@@ -469,6 +493,7 @@ spec:
       containers:
         - name: distribution
           image: kagaya85/starlight-distribution:latest
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "128Mi"

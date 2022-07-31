@@ -3,7 +3,7 @@ data:
   config.yaml: |
     server:
       grpc:
-        addr: 1.0.0.0:9097
+        addr: 0.0.0.0:9097
         timeout: 1s
       prometheus:
         port: 8087
@@ -14,6 +14,7 @@ data:
     balancer:
       addr: balancer:9000
       maxRetry: 3
+      method: random
 kind: ConfigMap
 metadata:
   creationTimestamp: null

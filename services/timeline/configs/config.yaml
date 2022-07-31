@@ -1,6 +1,6 @@
 server:
   grpc:
-    addr: 1.0.0.0:9097
+    addr: 0.0.0.0:9097
     timeout: 1s
   prometheus:
     port: 8087

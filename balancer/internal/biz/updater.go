@@ -136,7 +136,7 @@ func (g *dependencyGraph) GetDependency(operation Operation) []Operation {
 }
 
 type metricMap struct {
-	mu sync.Mutex
+	mu sync.RWMutex
 	m  map[Instance]Metric
 }
 
@@ -147,6 +147,8 @@ func NewMetricMap() *metricMap {
 }
 
 func (m *metricMap) GetMetric(id Instance) Metric {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	return m.m[id]
 }
 
@@ -250,7 +252,7 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[stri
 		for _, ins := range u.svcInfos[svc].Instances {
 			observed := u.metricSource.GetByInstanceID(ctx, ins)
 			u.insMetrics.Update(id, observed)
-			u.log.Debugf("update %s metric %v", id, u.insMetrics.GetMetric(id))
+			u.log.Debugf("update upstream %s metric %v", ins, u.insMetrics.GetMetric(id))
 		}
 	}
 	// calculate link load factor for each upstream instance

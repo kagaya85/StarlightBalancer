@@ -23,4 +23,4 @@ EXPOSE 8085
 EXPOSE 9095
 VOLUME /data/conf
 
-CMD ["./server", "-conf", "/data/conf"]
+CMD ["./transcode", "-conf", "/data/conf"]

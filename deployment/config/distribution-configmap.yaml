@@ -14,6 +14,7 @@ data:
     balancer:
       addr: balancer:9000
       maxRetry: 3
+      method: random
 kind: ConfigMap
 metadata:
   creationTimestamp: null
