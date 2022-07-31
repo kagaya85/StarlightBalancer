@@ -73,6 +73,7 @@ spec:
   ports:
     - port: 9091
       targetPort: 9091
+      nodePort: 30091
       protocol: TCP
       name: grpc
   selector:
