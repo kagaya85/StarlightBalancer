@@ -40,6 +40,7 @@ func NewMetricServer(c *conf.Server, logger log.Logger) *http.Server {
 			recovery.Recovery(),
 		),
 	)
+	prometheus.MustRegister(_metricSeconds, _metricRequests)
 	srv.Handle("/metrics", promhttp.Handler())
 
 	return srv
