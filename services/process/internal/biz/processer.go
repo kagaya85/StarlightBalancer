@@ -38,11 +38,11 @@ func NewProcesserUsecase(repo ProcesserRepo, logger log.Logger) *ProcesserUsecas
 	return &ProcesserUsecase{repo: repo, log: log.NewHelper(logger)}
 }
 
-func (uc *ProcesserUsecase) CallAudit(ctx context.Context, selector client.Selector) string {
+func (uc *ProcesserUsecase) CallAudit(ctx context.Context, selector client.Selector) (string, error) {
 	ep, err := selector("AuditService")
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
-		return ""
+		return "", err
 	}
 	conn, err := grpc.DialInsecure(
 		context.Background(),
@@ -59,16 +59,17 @@ func (uc *ProcesserUsecase) CallAudit(ctx context.Context, selector client.Selec
 	reply, err := client.Audit(ctx, &audit.AuditRequest{Id: "2233"})
 	if err != nil {
 		log.Error(err)
+		return "", err
 	}
 	log.Infof("[grpc] audit service reply %+v\n", reply)
-	return reply.GetResult()
+	return reply.GetResult(), nil
 }
 
-func (uc *ProcesserUsecase) CallTranscode(ctx context.Context, selector client.Selector) string {
+func (uc *ProcesserUsecase) CallTranscode(ctx context.Context, selector client.Selector) (string, error) {
 	ep, err := selector("TranscodeService")
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
-		return ""
+		return "", err
 	}
 	conn, err := grpc.DialInsecure(
 		context.Background(),
@@ -85,16 +86,17 @@ func (uc *ProcesserUsecase) CallTranscode(ctx context.Context, selector client.S
 	reply, err := client.Transcode(ctx, &transcode.TranscodeRequest{Source: "www.kagaya.com/foo/bar.mp4"})
 	if err != nil {
 		log.Error(err)
+		return "", err
 	}
 	log.Infof("[grpc] transcode service reply %+v\n", reply)
-	return reply.GetTarget()
+	return reply.GetTarget(), nil
 }
 
-func (uc *ProcesserUsecase) CallStorage(ctx context.Context, selector client.Selector) string {
+func (uc *ProcesserUsecase) CallStorage(ctx context.Context, selector client.Selector) (string, error) {
 	ep, err := selector("StorageService")
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
-		return ""
+		return "", err
 	}
 	conn, err := grpc.DialInsecure(
 		context.Background(),
@@ -111,7 +113,8 @@ func (uc *ProcesserUsecase) CallStorage(ctx context.Context, selector client.Sel
 	reply, err := client.Save(ctx, &storage.SaveRequest{Name: "kagaya", Data: "foobar"})
 	if err != nil {
 		log.Error(err)
+		return "", err
 	}
 	log.Infof("[grpc] Audit reply %+v\n", reply)
-	return reply.GetResult()
+	return reply.GetResult(), nil
 }

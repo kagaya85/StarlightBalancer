@@ -57,6 +57,7 @@ func (uc *UploaderUsecase) CallProcesss(ctx context.Context, selector client.Sel
 	reply, err := client.Process(ctx, &process.ProcessRequest{Id: "2233"})
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 	log.Infof("[grpc] process service reply %+v\n", reply)
 	return nil
@@ -82,6 +83,7 @@ func (uc *UploaderUsecase) CallPush(ctx context.Context, selector client.Selecto
 	reply, err := client.PushVideo(ctx, &push.PushRequest{Id: "2233"})
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 	log.Infof("[grpc] push service reply %+v\n", reply)
 	return nil

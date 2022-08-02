@@ -22,6 +22,6 @@ func NewDistributionService(uc *biz.DistributionUsecase) *DistributionService {
 	return &DistributionService{uc: uc}
 }
 
-func (s *DistributionService) Distribution(ctx context.Context, req *pb.DistributeRequest) (*pb.DistributeResponse, error) {
+func (s *DistributionService) Distribute(ctx context.Context, req *pb.DistributeRequest) (*pb.DistributeResponse, error) {
 	return &pb.DistributeResponse{Code: 200}, nil
 }

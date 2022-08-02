@@ -21,10 +21,6 @@ type TraceSource interface {
 	ListSpan(context.Context, time.Duration) []Span
 }
 
-type MetricSource interface {
-	GetByInstanceID(context.Context, Instance) Metric
-}
-
 type weight struct {
 	ins   Instance
 	value int
@@ -135,51 +131,6 @@ func (g *dependencyGraph) GetDependency(operation Operation) []Operation {
 	return []Operation{}
 }
 
-type metricMap struct {
-	mu sync.RWMutex
-	m  map[Instance]Metric
-}
-
-func NewMetricMap() *metricMap {
-	return &metricMap{
-		m: map[Instance]Metric{},
-	}
-}
-
-func (m *metricMap) GetMetric(id Instance) Metric {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.m[id]
-}
-
-func (m *metricMap) Update(id Instance, observed Metric) {
-	ewma := func(old, new float64) float64 {
-		beta := 0.8
-		return beta*old + (1-beta)*new
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if history, has := m.m[id]; has {
-		m.m[id] = Metric{
-			CPU:             ewma(history.CPU, observed.CPU),
-			Mem:             ewma(history.Mem, observed.Mem),
-			Load:            int(ewma(float64(history.Load), float64(observed.Load))),
-			ConnectionCount: int(ewma(float64(history.ConnectionCount), float64(observed.ConnectionCount))),
-			ResponseTime:    int(ewma(float64(history.ResponseTime), float64(observed.ResponseTime))),
-			SuccessRate:     ewma(history.SuccessRate, observed.SuccessRate),
-		}
-	} else {
-		m.m[id] = observed
-	}
-}
-
-func (m *metricMap) Clear(id Instance) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	delete(m.m, id)
-}
-
 type Span struct {
 	TraceID  string
 	Start    time.Time
@@ -193,17 +144,6 @@ type Span struct {
 
 	CallerOp string
 	CalleeOp string
-}
-
-type Metric struct {
-	CPU float64 // pod cpu usage rate
-	Mem float64 // pod memory usage rate (0~1)
-
-	Load            int // node exporter
-	ConnectionCount int // node_netstat_Tcp_ActiveOpens
-
-	ResponseTime int     // app range response time (ms)
-	SuccessRate  float64 // app range success rate (0~1)
 }
 
 type WeightUpdater struct {
@@ -250,7 +190,7 @@ func (u *WeightUpdater) UpdateWeights(ctx context.Context, id Instance) map[stri
 	// update metric for each upstream instance
 	for _, svc := range upstreamSvcs {
 		for _, ins := range u.svcInfos[svc].Instances {
-			observed := u.metricSource.GetByInstanceID(ctx, ins)
+			observed := u.metricSource.GetByInstance(ctx, insInfo)
 			u.insMetrics.Update(id, observed)
 			u.log.Debugf("update upstream %s metric %v", ins, u.insMetrics.GetMetric(id))
 		}

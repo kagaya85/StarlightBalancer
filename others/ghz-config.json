@@ -1,0 +1,17 @@
+{
+	"proto": "./api/services/upload/v1/upload.proto",
+	"call": "upload.v1.UploadService/Upload",
+	"total": 200,
+	"concurrency": 10,
+	"insecure": true,
+	"data": {
+		"id": "123"
+	},
+	"metadata": {
+		"foo": "bar",
+		"trace_id": "{{.RequestNumber}}",
+		"timestamp": "{{.TimestampUnix}}"
+	},
+	"max-duration": "10s",
+	"host": "127.0.0.1:9091"
+}

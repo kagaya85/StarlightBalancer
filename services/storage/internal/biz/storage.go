@@ -56,6 +56,7 @@ func (uc *StorageUsecase) Call(ctx context.Context, selector client.Selector) er
 	reply, err := client.Distribute(ctx, &v1.DistributeRequest{Id: "2233"})
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 	log.Infof("[grpc] distribution service reply %+v\n", reply)
 	return nil

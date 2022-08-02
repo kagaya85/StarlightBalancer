@@ -56,6 +56,7 @@ func (uc *PusherUsecase) Call(ctx context.Context, selector client.Selector) err
 	reply, err := client.PushTimeline(ctx, &v1.PushTimelineRequest{UserId: "2233", Items: []string{"hello", "world"}})
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 	log.Infof("[grpc] timeline service reply %+v\n", reply)
 	return nil

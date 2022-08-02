@@ -23,6 +23,8 @@ func NewStorageService(uc *biz.StorageUsecase) *StorageService {
 }
 
 func (s *StorageService) Save(ctx context.Context, req *pb.SaveRequest) (*pb.SaveResponse, error) {
-	s.uc.Call(ctx, GlobalBalancer.Default)
+	if err := s.uc.Call(ctx, GlobalBalancer.Default); err != nil {
+		return nil, err
+	}
 	return &pb.SaveResponse{Result: "saved"}, nil
 }

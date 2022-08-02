@@ -2,7 +2,9 @@ package data
 
 import (
 	"context"
+	"fmt"
 	"starlight/balancer/internal/conf"
+	"strconv"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -71,26 +73,36 @@ func (m *MetricData) QueryRange(ctx context.Context, query string) model.Value {
 	return result
 }
 
-func (m *MetricData) QueryPodCPUUsage(ctx context.Context, target string) int {
+func (m *MetricData) QueryPodCPUUsage(ctx context.Context, pod string) float64 {
+	query := fmt.Sprintf("increase(pod_cpu_usage_seconds_total{pod=\"%s\"}[1m])/60", pod)
+	value := m.Query(ctx, query)
+	if res, err := strconv.ParseFloat(value.String(), 64); err == nil {
+		return res
+	}
+	return 0.0
+}
+
+func (m *MetricData) QueryPodMemUsage(ctx context.Context, pod string) float64 {
+	query := fmt.Sprintf("pod_memory_working_set_bytes{pod=\"%s\"}", pod)
+	value := m.Query(ctx, query)
+	if used, err := strconv.Atoi(value.String()); err == nil {
+		return float64(used)
+	}
+	return 0.0
+}
+
+func (m *MetricData) QueryNodeLoad(ctx context.Context, node string) int {
 	return 0
 }
 
-func (m *MetricData) QueryPodMemUsage(ctx context.Context, target string) int {
+func (m *MetricData) QueryNodeConnectionCount(ctx context.Context, node string) int {
 	return 0
 }
 
-func (m *MetricData) QueryNodeLoad(ctx context.Context, target string) int {
+func (m *MetricData) QueryAppResponseTime(ctx context.Context, pod string) int {
 	return 0
 }
 
-func (m *MetricData) QueryNodeConnectionCount(ctx context.Context, target string) int {
-	return 0
-}
-
-func (m *MetricData) QueryAppResponseTime(ctx context.Context, target string) int {
-	return 0
-}
-
-func (m *MetricData) QueryAppCode(ctx context.Context, target string) int {
+func (m *MetricData) QueryAppSuccessRate(ctx context.Context, pod string) float64 {
 	return 0
 }

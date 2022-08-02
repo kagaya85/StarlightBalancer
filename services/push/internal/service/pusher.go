@@ -23,6 +23,8 @@ func NewPusherService(uc *biz.PusherUsecase) *PushService {
 }
 
 func (s *PushService) PushVideo(ctx context.Context, req *pb.PushRequest) (*pb.PushResponse, error) {
-	s.uc.Call(ctx, GlobalBalancer.Default)
+	if err := s.uc.Call(ctx, GlobalBalancer.Default); err != nil {
+		return nil, err
+	}
 	return &pb.PushResponse{Code: 200}, nil
 }
