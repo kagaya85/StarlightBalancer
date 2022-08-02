@@ -80,13 +80,13 @@ func (l *weightList) RemoveInstance(id Instance, op Operation) {
 }
 
 type InstanceInfo struct {
-	ID      string
-	IP      string
-	Service string
-	Port    string
-	Pod     string
-	Node    string
-	Zone    string
+	ID      string // instance id
+	IP      string // ip address
+	Service string // service name
+	Port    string // port of service
+	Pod     string // pod name
+	Node    string // node name
+	Zone    string // zone name
 }
 
 type SerivceInfo struct {

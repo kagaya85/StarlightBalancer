@@ -3,10 +3,10 @@ set -eu
 
 dir=./deployment
 
-k apply -f "$dir"/prometheus/ns.yaml
+kubectl apply -f "$dir"/prometheus/ns.yaml
 
 make load-image
 
-k apply -f "$dir"/config
+kubectl apply -f "$dir"/config
 
-k apply -f "$dir"/prometheus -f "$dir"/balncer-deploy.yaml -f "$dir"/services-deploy.yaml
+kubectl apply -f "$dir"/prometheus -f "$dir"/balancer-deploy.yaml -f "$dir"/services-deploy.yaml
