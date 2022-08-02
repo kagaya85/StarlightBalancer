@@ -105,6 +105,13 @@ spec:
         prometheus.io/scheme: "http"
         prometheus.io/path: "/metrics"
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: process
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: process
           image: kagaya85/starlight-process:latest
@@ -174,6 +181,13 @@ spec:
         prometheus.io/scheme: "http"
         prometheus.io/path: "/metrics"
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: push
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: push
           image: kagaya85/starlight-push:latest
@@ -243,6 +257,13 @@ spec:
         prometheus.io/scheme: "http"
         prometheus.io/path: "/metrics"
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: audit
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: audit
           image: kagaya85/starlight-audit:latest
@@ -312,6 +333,13 @@ spec:
         prometheus.io/scheme: "http"
         prometheus.io/path: "/metrics"
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: transcode
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: transcode
           image: kagaya85/starlight-transcode:latest
@@ -381,6 +409,13 @@ spec:
         prometheus.io/scheme: "http"
         prometheus.io/path: "/metrics"
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: storage
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: storage
           image: kagaya85/starlight-storage:latest
@@ -450,6 +485,13 @@ spec:
         prometheus.io/scheme: "http"
         prometheus.io/path: "/metrics"
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: timeline
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: timeline
           image: kagaya85/starlight-timeline:latest
@@ -519,6 +561,13 @@ spec:
         prometheus.io/scheme: "http"
         prometheus.io/path: "/metrics"
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: distribution
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: distribution
           image: kagaya85/starlight-distribution:latest

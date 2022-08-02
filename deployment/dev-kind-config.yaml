@@ -24,7 +24,6 @@ kubeadmConfigPatches:
     imageRepository: registry.aliyuncs.com/google_containers
 nodes:
   - role: control-plane
-  - role: worker
     extraPortMappings:
       - containerPort: 30091
         hostPort: 9091
@@ -36,7 +35,44 @@ nodes:
         hostPort: 30081
         listenAddress: "0.0.0.0"
   - role: worker
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "zone=cn-shanghai"
   - role: worker
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "zone=cn-shanghai"
   - role: worker
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "zone=cn-shanghai"
   - role: worker
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "zone=cn-hongkong"
   - role: worker
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "zone=cn-hongkong"
+  - role: worker
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "zone=cn-beijing"
