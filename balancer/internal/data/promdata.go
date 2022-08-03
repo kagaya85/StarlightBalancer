@@ -79,6 +79,8 @@ func (m *MetricData) QueryPodCPUUsage(ctx context.Context, pod string) float64 {
 	value := m.Query(ctx, query)
 	if res, err := strconv.ParseFloat(value.String(), 64); err == nil {
 		return res
+	} else {
+		m.log.Errorw("query pod cpu usage error", "pod", pod, "error", err)
 	}
 	return 0.0
 }
@@ -88,6 +90,8 @@ func (m *MetricData) QueryPodMemUsage(ctx context.Context, pod string) float64 {
 	value := m.Query(ctx, query)
 	if used, err := strconv.Atoi(value.String()); err == nil {
 		return float64(used) / 128 * 1024 * 1024 // # default mem limit is 128Mi
+	} else {
+		m.log.Errorw("query pod mem usage error", "pod", pod, "error", err)
 	}
 	return 0.0
 }
@@ -101,6 +105,8 @@ func (m *MetricData) QueryNodeLoad(ctx context.Context, node string) int {
 		} else {
 			return int(math.Floor(res + 0.5))
 		}
+	} else {
+		m.log.Errorw("query node load error", "node", node, "error", err)
 	}
 	return 0
 }
@@ -110,7 +116,10 @@ func (m *MetricData) QueryNodeConnectionCount(ctx context.Context, node string) 
 	value := m.Query(ctx, query)
 	if count, err := strconv.Atoi(value.String()); err == nil {
 		return count
+	} else {
+		m.log.Errorw("query node connection count error", "node", node, "error", err)
 	}
+
 	return 0
 }
 
@@ -119,6 +128,8 @@ func (m *MetricData) QueryAppResponseTime(ctx context.Context, pod string) int {
 	value := m.Query(ctx, query)
 	if avg, err := strconv.ParseFloat(value.String(), 64); err == nil {
 		return int(avg * 1000)
+	} else {
+		m.log.Errorw("query app response time error", "pod", pod, "error", err)
 	}
 	return 0
 }
@@ -128,6 +139,8 @@ func (m *MetricData) QueryAppSuccessRate(ctx context.Context, pod string) float6
 	value := m.Query(ctx, query)
 	if rate, err := strconv.ParseFloat(value.String(), 64); err == nil {
 		return rate
+	} else {
+		m.log.Errorw("query app success rate error", "pod", pod, "error", err)
 	}
 	return 0
 }
