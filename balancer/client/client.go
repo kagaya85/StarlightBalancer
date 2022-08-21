@@ -37,7 +37,7 @@ type BalancerClient struct {
 	maxRetry    int
 	serviceName string
 	port        string
-	method      string
+	method      string // load balancing method
 
 	log log.Helper
 }

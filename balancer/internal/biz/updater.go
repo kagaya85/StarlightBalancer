@@ -268,7 +268,7 @@ func (u *WeightUpdater) updateWeights(ctx context.Context, insInfo InstanceInfo,
 		PopulationSize: 100,
 		MaxGeneration:  1000,
 		CrossoverRate:  0.8,
-		MutationRate:   0.1,
+		MutationRate:   0.01,
 	}, fms)
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
