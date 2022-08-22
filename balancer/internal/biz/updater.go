@@ -161,6 +161,9 @@ type WeightUpdater struct {
 	traceSource  TraceSource  // trace data source
 	metricSource MetricSource // metric data source
 
+	dsmu      sync.Mutex
+	dsWeights map[Instance][6][2]int // instance id -> d-s dynamic weights
+
 	log log.Helper
 }
 
