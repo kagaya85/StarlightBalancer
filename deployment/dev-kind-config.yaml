@@ -61,14 +61,7 @@ nodes:
         kind: JoinConfiguration
         nodeRegistration:
           kubeletExtraArgs:
-            node-labels: "zone=cn-hongkong"
-  - role: worker
-    kubeadmConfigPatches:
-      - |
-        kind: JoinConfiguration
-        nodeRegistration:
-          kubeletExtraArgs:
-            node-labels: "zone=cn-hongkong"
+            node-labels: "zone=cn-beijing"
   - role: worker
     kubeadmConfigPatches:
       - |
@@ -76,3 +69,10 @@ nodes:
         nodeRegistration:
           kubeletExtraArgs:
             node-labels: "zone=cn-beijing"
+  - role: worker
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "zone=cn-hongkong"
