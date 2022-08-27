@@ -1,0 +1,229 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-0
+  labels:
+    app: storage
+    zone: cn-shanghai
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8086"
+    prometheus.io/scheme: "http"
+    prometheus.io/path: "/metrics"
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: storage
+          topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                  - cn-shanghai
+  containers:
+    - name: storage
+      image: kagaya85/starlight-storage:latest
+      imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+      ports:
+        - name: grpc
+          containerPort: 9096
+          protocol: TCP
+        - name: metrics
+          containerPort: 8086
+          protocol: TCP
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ZONE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['zone']
+      volumeMounts:
+        - name: storage-config
+          mountPath: /data/conf
+  volumes:
+    - name: storage-config
+      configMap:
+        name: storage-config
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-1
+  labels:
+    app: storage
+    zone: cn-beijing
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8086"
+    prometheus.io/scheme: "http"
+    prometheus.io/path: "/metrics"
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: storage
+          topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                  - cn-beijing
+  containers:
+    - name: storage
+      image: kagaya85/starlight-storage:latest
+      imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+      ports:
+        - name: grpc
+          containerPort: 9096
+          protocol: TCP
+        - name: metrics
+          containerPort: 8086
+          protocol: TCP
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ZONE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['zone']
+      volumeMounts:
+        - name: storage-config
+          mountPath: /data/conf
+  volumes:
+    - name: storage-config
+      configMap:
+        name: storage-config
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-2
+  labels:
+    app: storage
+    zone: cn-hongkong
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8086"
+    prometheus.io/scheme: "http"
+    prometheus.io/path: "/metrics"
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: storage
+          topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                  - cn-hongkong
+  containers:
+    - name: storage
+      image: kagaya85/starlight-storage:latest
+      imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+      ports:
+        - name: grpc
+          containerPort: 9096
+          protocol: TCP
+        - name: metrics
+          containerPort: 8086
+          protocol: TCP
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ZONE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['zone']
+      volumeMounts:
+        - name: storage-config
+          mountPath: /data/conf
+  volumes:
+    - name: storage-config
+      configMap:
+        name: storage-config

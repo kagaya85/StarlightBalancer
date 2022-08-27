@@ -1,0 +1,14 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: audit-network-delay
+spec:
+  action: delay
+  mode: all
+  selector:
+    labelSelector:
+      app: audit
+  delay:
+    latency: "100ms"
+    correlation: "50"
+    jitter: "50ms"

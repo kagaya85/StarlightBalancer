@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: upload-0
+  labels:
+    app: upload
+    zone: cn-shanghai
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8081"
+    prometheus.io/scheme: "http"
+    prometheus.io/path: "/metrics"
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: upload
+          topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                  - cn-shanghai
+  containers:
+    - name: upload
+      image: kagaya85/starlight-upload:latest
+      imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+      ports:
+        - name: grpc
+          containerPort: 9091
+          protocol: TCP
+        - name: metrics
+          containerPort: 8081
+          protocol: TCP
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ZONE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['zone']
+      volumeMounts:
+        - name: upload-config
+          mountPath: /data/conf
+  volumes:
+    - name: upload-config
+      configMap:
+        name: upload-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: upload
+  labels:
+    app: upload
+spec:
+  ports:
+    - port: 9091
+      targetPort: 9091
+      nodePort: 30091
+      protocol: TCP
+      name: grpc
+  selector:
+    app: upload
+  type: NodePort

@@ -1,0 +1,13 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: transcode-cpu-stress
+spec:
+  stressors:
+    cpu:
+      worker: 8
+      load: 100
+  mode: all
+  selector:
+    labelSelector:
+      app: transcode

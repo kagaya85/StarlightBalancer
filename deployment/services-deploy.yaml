@@ -98,7 +98,6 @@ spec:
     metadata:
       labels:
         app: process
-        zone: cn-shanghai
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8082"
@@ -174,7 +173,6 @@ spec:
     metadata:
       labels:
         app: push
-        zone: cn-shanghai
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8083"
@@ -250,7 +248,6 @@ spec:
     metadata:
       labels:
         app: audit
-        zone: cn-shanghai
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8084"
@@ -326,7 +323,6 @@ spec:
     metadata:
       labels:
         app: transcode
-        zone: cn-shanghai
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8085"
@@ -402,7 +398,6 @@ spec:
     metadata:
       labels:
         app: storage
-        zone: cn-shanghai
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8086"
@@ -478,7 +473,6 @@ spec:
     metadata:
       labels:
         app: timeline
-        zone: cn-shanghai
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8087"
@@ -554,7 +548,6 @@ spec:
     metadata:
       labels:
         app: distribution
-        zone: cn-shanghai
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8088"

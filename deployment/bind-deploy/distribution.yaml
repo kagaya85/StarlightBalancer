@@ -1,0 +1,229 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: distribution-0
+  labels:
+    app: distribution
+    zone: cn-shanghai
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8088"
+    prometheus.io/scheme: "http"
+    prometheus.io/path: "/metrics"
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: distribution
+          topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                  - cn-shanghai
+  containers:
+    - name: distribution
+      image: kagaya85/starlight-distribution:latest
+      imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+      ports:
+        - name: grpc
+          containerPort: 9098
+          protocol: TCP
+        - name: metrics
+          containerPort: 8088
+          protocol: TCP
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ZONE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['zone']
+      volumeMounts:
+        - name: distribution-config
+          mountPath: /data/conf
+  volumes:
+    - name: distribution-config
+      configMap:
+        name: distribution-config
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: distribution-1
+  labels:
+    app: distribution
+    zone: cn-hongkong
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8088"
+    prometheus.io/scheme: "http"
+    prometheus.io/path: "/metrics"
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: distribution
+          topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                  - cn-hongkong
+  containers:
+    - name: distribution
+      image: kagaya85/starlight-distribution:latest
+      imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+      ports:
+        - name: grpc
+          containerPort: 9098
+          protocol: TCP
+        - name: metrics
+          containerPort: 8088
+          protocol: TCP
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ZONE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['zone']
+      volumeMounts:
+        - name: distribution-config
+          mountPath: /data/conf
+  volumes:
+    - name: distribution-config
+      configMap:
+        name: distribution-config
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: distribution-2
+  labels:
+    app: distribution
+    zone: cn-beijing
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8088"
+    prometheus.io/scheme: "http"
+    prometheus.io/path: "/metrics"
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app: distribution
+          topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: zone
+                operator: In
+                values:
+                  - cn-beijing
+  containers:
+    - name: distribution
+      image: kagaya85/starlight-distribution:latest
+      imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+      ports:
+        - name: grpc
+          containerPort: 9098
+          protocol: TCP
+        - name: metrics
+          containerPort: 8088
+          protocol: TCP
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ZONE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['zone']
+      volumeMounts:
+        - name: distribution-config
+          mountPath: /data/conf
+  volumes:
+    - name: distribution-config
+      configMap:
+        name: distribution-config

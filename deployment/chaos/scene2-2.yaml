@@ -1,0 +1,10 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: hongkong-network-partition
+spec:
+  action: partition
+  mode: all
+  selectior:
+    labelSelector:
+      zone: cn-hongkong
