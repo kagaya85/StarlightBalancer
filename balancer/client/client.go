@@ -145,6 +145,7 @@ func (b *BalancerClient) SetMethod(m string) {
 }
 
 func (b *BalancerClient) Default(service string) (string, func(), error) {
+	b.log.Debugf("using lb method %s", b.method)
 	switch b.method {
 	case "random":
 		return b.Random(service)
@@ -158,7 +159,7 @@ func (b *BalancerClient) Default(service string) (string, func(), error) {
 		return b.WRR(service)
 	case "dwrr":
 		return b.DWRR(service)
-	case "ll":
+	case "leastloaded":
 		return b.LeastLoaded(service)
 	default:
 		return "", EmptyFunc, errors.New("no lb method")

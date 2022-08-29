@@ -2,7 +2,7 @@
 	"proto": "./api/services/upload/v1/upload.proto",
 	"call": "upload.v1.UploadService/Upload",
 	"concurrency": 10,
-	"rps": 100,
+	"rps": 1000,
 	"insecure": true,
 	"data": {
 		"id": "123"

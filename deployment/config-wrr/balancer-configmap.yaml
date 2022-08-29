@@ -1,0 +1,24 @@
+apiVersion: v1
+data:
+  config.yaml: |
+    server:
+      grpc:
+        addr: 0.0.0.0:9000
+        timeout: 1s
+    data:
+      database:
+        driver: mysql
+        source: root:root@tcp(127.0.0.1:3306)/test
+      skywalking:
+        address: http://skywalking.tracing.svc:11800
+        username: admin
+        password: admin
+      prometheus:
+        address: http://prometheus.monitoring.svc:9090
+        timeout: 5s
+    updater:
+      updateInterval: 5s
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: balancer-config

@@ -3,10 +3,10 @@ data:
   config.yaml: |
     server:
       grpc:
-        addr: 0.0.0.0:9097
+        addr: 0.0.0.0:9096
         timeout: 1s
       prometheus:
-        port: 8087
+        port: 8086
     data:
       database:
         driver: mysql
@@ -14,8 +14,8 @@ data:
     balancer:
       addr: balancer:9000
       maxRetry: 3
-      method: wrandom
+      method: random
 kind: ConfigMap
 metadata:
   creationTimestamp: null
-  name: timeline-config
+  name: storage-config
