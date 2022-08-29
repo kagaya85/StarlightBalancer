@@ -11,7 +11,7 @@ data:
     username: admin
     password: admin
   prometheus:
-    addr: http://prometheus.monitoring.svc:9090
+    address: http://prometheus.monitoring.svc:9090
     timeout: 1s
 updater:
   timezone: Asia/Shanghai

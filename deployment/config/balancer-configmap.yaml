@@ -14,8 +14,8 @@ data:
         username: admin
         password: admin
       prometheus:
-        addr: http://prometheus.monitoring.svc:9090
-        timeout: 1s
+        address: http://prometheus.monitoring.svc:9090
+        timeout: 5s
     updater:
       updateInterval: 5s
 kind: ConfigMap
