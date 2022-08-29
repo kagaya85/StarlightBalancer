@@ -37,7 +37,8 @@ func NewPusherUsecase(repo PusherRepo, logger log.Logger) *PusherUsecase {
 }
 
 func (uc *PusherUsecase) Call(ctx context.Context, selector client.Selector) error {
-	ep, err := selector("TimelineService")
+	ep, release, err := selector("TimelineService")
+	defer release()
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
 	}

@@ -39,7 +39,8 @@ func NewProcesserUsecase(repo ProcesserRepo, logger log.Logger) *ProcesserUsecas
 }
 
 func (uc *ProcesserUsecase) CallAudit(ctx context.Context, selector client.Selector) (string, error) {
-	ep, err := selector("AuditService")
+	ep, release, err := selector("AuditService")
+	defer release()
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
 		return "", err
@@ -66,7 +67,8 @@ func (uc *ProcesserUsecase) CallAudit(ctx context.Context, selector client.Selec
 }
 
 func (uc *ProcesserUsecase) CallTranscode(ctx context.Context, selector client.Selector) (string, error) {
-	ep, err := selector("TranscodeService")
+	ep, release, err := selector("TranscodeService")
+	defer release()
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
 		return "", err
@@ -93,7 +95,8 @@ func (uc *ProcesserUsecase) CallTranscode(ctx context.Context, selector client.S
 }
 
 func (uc *ProcesserUsecase) CallStorage(ctx context.Context, selector client.Selector) (string, error) {
-	ep, err := selector("StorageService")
+	ep, release, err := selector("StorageService")
+	defer release()
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
 		return "", err

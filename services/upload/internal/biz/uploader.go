@@ -38,9 +38,11 @@ func NewUploaderUsecase(repo UploaderRepo, logger log.Logger) *UploaderUsecase {
 }
 
 func (uc *UploaderUsecase) CallProcesss(ctx context.Context, selector client.Selector) error {
-	ep, err := selector("ProcessService")
+	ep, release, err := selector("ProcessService")
+	defer release()
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
+		return err
 	}
 	conn, err := grpc.DialInsecure(
 		context.Background(),
@@ -64,9 +66,11 @@ func (uc *UploaderUsecase) CallProcesss(ctx context.Context, selector client.Sel
 }
 
 func (uc *UploaderUsecase) CallPush(ctx context.Context, selector client.Selector) error {
-	ep, err := selector("PushService")
+	ep, release, err := selector("PushService")
+	defer release()
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
+		return err
 	}
 	conn, err := grpc.DialInsecure(
 		context.Background(),

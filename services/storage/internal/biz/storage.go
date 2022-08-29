@@ -37,7 +37,8 @@ func NewStorageUsecase(repo StorageRepo, logger log.Logger) *StorageUsecase {
 }
 
 func (uc *StorageUsecase) Call(ctx context.Context, selector client.Selector) error {
-	ep, err := selector("DistributionService")
+	ep, release, err := selector("DistributionService")
+	defer release()
 	if err != nil {
 		log.Errorf("selector error %+v\n", err)
 	}

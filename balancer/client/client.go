@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math"
 	"math/rand"
 	"os"
 	"sync"
@@ -19,7 +20,9 @@ import (
 
 var ErrNoEndpoint = errors.New("no endpoint")
 
-type Selector func(service string) (endpoint string, err error)
+type Selector func(service string) (endpoint string, release func(), err error)
+
+func EmptyFunc() {}
 
 type Weight struct {
 	endpoint string
@@ -32,6 +35,9 @@ type BalancerClient struct {
 
 	rrmu  sync.Mutex
 	rridx map[string]int // key: service, value: round robin index
+
+	loadmu   sync.Mutex
+	loadlist map[string]int // key: instance, value: load
 
 	serverAddr  string
 	maxRetry    int
@@ -138,7 +144,7 @@ func (b *BalancerClient) SetMethod(m string) {
 	b.log.Infof("set lb method to %s", m)
 }
 
-func (b *BalancerClient) Default(service string) (string, error) {
+func (b *BalancerClient) Default(service string) (string, func(), error) {
 	switch b.method {
 	case "random":
 		return b.Random(service)
@@ -152,31 +158,33 @@ func (b *BalancerClient) Default(service string) (string, error) {
 		return b.WRR(service)
 	case "dwrr":
 		return b.DWRR(service)
+	case "ll":
+		return b.LeastLoaded(service)
 	default:
-		return "", errors.New("no lb method")
+		return "", EmptyFunc, errors.New("no lb method")
 	}
 }
 
 // Random is a random balancer.
-func (b *BalancerClient) Random(service string) (string, error) {
+func (b *BalancerClient) Random(service string) (string, func(), error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
 	list := b.list[service]
 	n := len(list)
 	if n == 0 {
-		return "", ErrNoEndpoint
+		return "", EmptyFunc, ErrNoEndpoint
 	}
-	return list[rand.Intn(n)].endpoint, nil
+	return list[rand.Intn(n)].endpoint, EmptyFunc, nil
 }
 
 // WRandom is a weighted random balancer.
-func (b *BalancerClient) WRandom(service string) (string, error) {
+func (b *BalancerClient) WRandom(service string) (string, func(), error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
 	list := b.list[service]
 	n := len(list)
 	if n == 0 {
-		return "", ErrNoEndpoint
+		return "", EmptyFunc, ErrNoEndpoint
 	}
 	total := 0
 	for _, w := range list {
@@ -185,21 +193,21 @@ func (b *BalancerClient) WRandom(service string) (string, error) {
 	r := rand.Intn(total)
 	for _, w := range list {
 		if r < w.weight {
-			return w.endpoint, nil
+			return w.endpoint, EmptyFunc, nil
 		}
 		r -= w.weight
 	}
-	return list[rand.Intn(n)].endpoint, nil
+	return list[rand.Intn(n)].endpoint, EmptyFunc, nil
 }
 
 // DWRandom is a dynamic weighted random balancer.
-func (b *BalancerClient) DWRandom(service string) (string, error) {
+func (b *BalancerClient) DWRandom(service string) (string, func(), error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
 	list := b.list[service]
 	n := len(list)
 	if n == 0 {
-		return "", ErrNoEndpoint
+		return "", EmptyFunc, ErrNoEndpoint
 	}
 	total := 0
 	for _, w := range list {
@@ -208,38 +216,38 @@ func (b *BalancerClient) DWRandom(service string) (string, error) {
 	r := rand.Intn(total)
 	for _, w := range list {
 		if r < w.weight {
-			return w.endpoint, nil
+			return w.endpoint, EmptyFunc, nil
 		}
 		r -= w.weight
 	}
-	return list[rand.Intn(n)].endpoint, nil
+	return list[rand.Intn(n)].endpoint, EmptyFunc, nil
 }
 
 // RR is a round robin balancer.
-func (b *BalancerClient) RR(service string) (string, error) {
+func (b *BalancerClient) RR(service string) (string, func(), error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
 	list := b.list[service]
 	n := len(list)
 	if n == 0 {
-		return "", ErrNoEndpoint
+		return "", EmptyFunc, ErrNoEndpoint
 	}
 
 	b.rrmu.Lock()
 	idx := b.rridx[service]
 	b.rridx[service] = (idx + 1) % n
 	b.rrmu.Unlock()
-	return list[idx].endpoint, nil
+	return list[idx].endpoint, EmptyFunc, nil
 }
 
 // WRR is a weighted round robin balancer.
-func (b *BalancerClient) WRR(service string) (string, error) {
+func (b *BalancerClient) WRR(service string) (string, func(), error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
 	list := b.list[service]
 	n := len(list)
 	if n == 0 {
-		return "", ErrNoEndpoint
+		return "", EmptyFunc, ErrNoEndpoint
 	}
 
 	total := 0
@@ -253,21 +261,21 @@ func (b *BalancerClient) WRR(service string) (string, error) {
 	b.rrmu.Unlock()
 	for _, w := range list {
 		if idx < w.weight {
-			return w.endpoint, nil
+			return w.endpoint, EmptyFunc, nil
 		}
 		idx -= w.weight
 	}
-	return list[rand.Intn(n)].endpoint, nil
+	return list[rand.Intn(n)].endpoint, EmptyFunc, nil
 }
 
 // DRR is a dynamic weighted round robin balancer.
-func (b *BalancerClient) DWRR(service string) (string, error) {
+func (b *BalancerClient) DWRR(service string) (string, func(), error) {
 	b.l.RLock()
 	defer b.l.RUnlock()
 	list := b.list[service]
 	n := len(list)
 	if n == 0 {
-		return "", ErrNoEndpoint
+		return "", EmptyFunc, ErrNoEndpoint
 	}
 
 	total := 0
@@ -281,11 +289,50 @@ func (b *BalancerClient) DWRR(service string) (string, error) {
 	b.rrmu.Unlock()
 	for _, w := range list {
 		if idx < w.weight {
-			return w.endpoint, nil
+			return w.endpoint, EmptyFunc, nil
 		}
 		idx -= w.weight
 	}
-	return list[rand.Intn(n)].endpoint, nil
+	return list[rand.Intn(n)].endpoint, EmptyFunc, nil
+}
+
+// LeastLoaded is a least loaded balancer.
+func (b *BalancerClient) LeastLoaded(service string) (string, func(), error) {
+	b.l.RLock()
+	defer b.l.RUnlock()
+	list := b.list[service]
+
+	n := len(list)
+	if n == 0 {
+		return "", EmptyFunc, ErrNoEndpoint
+	}
+	min := math.MaxInt32
+	var endpoint string
+	b.loadmu.Lock()
+	defer b.loadmu.Unlock()
+	for i, w := range list {
+		load, has := b.loadlist[w.endpoint]
+		if !has {
+			load = 0
+			b.loadlist[w.endpoint] = load
+		}
+		if i == 0 || load < min {
+			min = w.weight
+			endpoint = w.endpoint
+		}
+	}
+
+	b.loadlist[endpoint]++
+	return endpoint, func() { b.release(endpoint) }, nil
+}
+
+func (b *BalancerClient) release(endpoint string) {
+	b.loadmu.Lock()
+	defer b.loadmu.Unlock()
+	b.loadlist[endpoint]--
+	if b.loadlist[endpoint] < 0 {
+		b.loadlist[endpoint] = 0
+	}
 }
 
 func listServiceInfo(serviceName, port string) (services []*v1.ServiceInfo, upstream []*v1.ServiceInfo, err error) {
