@@ -55,6 +55,8 @@ func NewBalancerClient(serverAddr string, maxRetry int, serviceName string, port
 		serviceName: serviceName,
 		port:        port,
 		method:      method,
+		rridx:       make(map[string]int),
+		loadlist:    make(map[string]int),
 		log:         *log.NewHelper(logger),
 	}
 }
