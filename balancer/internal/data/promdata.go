@@ -141,7 +141,7 @@ func (m *MetricData) QueryNodeConnectionCount(ctx context.Context, node string) 
 }
 
 func (m *MetricData) QueryAppResponseTime(ctx context.Context, pod string) int {
-	query := fmt.Sprintf("rate(server_requests_duration_sec_sum{kubernetes_pod_name=\"%s\"}[1m])/rate(server_requests_duration_sec_count{kubernetes_pod_name=\"%s\"}[1m])", pod, pod)
+	query := fmt.Sprintf("rate(server_requests_duration_sec_sum{kubernetes_pod_name=\"%s\"}[5m])/rate(server_requests_duration_sec_count{kubernetes_pod_name=\"%s\"}[5m])", pod, pod)
 	result := m.parseValue(m.Query(ctx, query))
 	if result == "" {
 		return 0.0
@@ -155,7 +155,7 @@ func (m *MetricData) QueryAppResponseTime(ctx context.Context, pod string) int {
 }
 
 func (m *MetricData) QueryAppSuccessRate(ctx context.Context, pod string) float64 {
-	query := fmt.Sprintf("sum(increase(client_requests_code_total{code=\"0\",kubernetes_pod_name=\"%s\"}[1m]))/sum(increase(client_requests_code_total{kubernetes_pod_name=\"%s\"}[1m]))", pod, pod)
+	query := fmt.Sprintf("sum(increase(client_requests_code_total{code=\"0\",kubernetes_pod_name=\"%s\"}[5m]))/sum(increase(client_requests_code_total{kubernetes_pod_name=\"%s\"}[5m]))", pod, pod)
 	result := m.parseValue(m.Query(ctx, query))
 	if result == "" {
 		return 0.0

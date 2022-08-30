@@ -4,7 +4,7 @@ data:
     server:
       grpc:
         addr: 0.0.0.0:9098
-        timeout: 1s
+        timeout: 10s
       prometheus:
         port: 8088
     data:

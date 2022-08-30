@@ -5,9 +5,9 @@ metadata:
 spec:
   stressors:
     cpu:
-      worker: 8
+      workers: 8
       load: 100
   mode: all
   selector:
-    labelSelector:
+    labelSelectors:
       app: transcode

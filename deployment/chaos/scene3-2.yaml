@@ -1,14 +1,30 @@
 apiVersion: chaos-mesh.org/v1alpha1
 kind: NetworkChaos
 metadata:
-  name: audit-network-delay
+  name: bj-network-delay
 spec:
   action: delay
   mode: all
   selector:
-    labelSelector:
-      app: audit
+    labelSelectors:
+      zone: cn-beijing
   delay:
-    latency: "100ms"
+    latency: "50ms"
+    correlation: "50"
+    jitter: "10ms"
+
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: hk-network-delay
+spec:
+  action: delay
+  mode: all
+  selector:
+    labelSelectors:
+      zone: cn-hongkong
+  delay:
+    latency: "200ms"
     correlation: "50"
     jitter: "50ms"
