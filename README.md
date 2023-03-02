@@ -1,16 +1,12 @@
 # StarlightBalancer
 ✨わかります
 
-work in progress...
-
-## TODO
-
 ### Balancer
-- [ ] 从prometheus获取pod指标
+- [x] 从prometheus获取pod指标
 - [x] 从skywalking获取trace数据
-- [ ] 由服务实例上报接口依赖信息
-- [ ] algorithm
+- [x] 由服务实例上报接口依赖信息
+- [x] algorithm
 
 ### Service
-- [ ] update
-- [ ] local balance weights list
+- [x] update
+- [x] local balance weights list
